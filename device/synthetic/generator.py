@@ -6,41 +6,9 @@ import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from engagement_monitor import SCHEMA_VERSION
-from engagement_monitor.config import BEHAVIOR_KEYS, DEFAULT_CONFIG
 from engagement_monitor.schemas import build_summary_payload, build_tick_payload
 
 logger = logging.getLogger(__name__)
-
-# Behavior distribution templates for realistic variation
-_POSITIVE_BEHAVIORS = ["raising_hand", "writing_notes", "looking_at_board"]
-_NEGATIVE_BEHAVIORS = ["on_phone", "head_down", "talking_to_group", "hands_on_head", "looking_away_long"]
-
-
-def _distribute_behaviors(people: int, engagement_bias: float) -> dict:
-    """Distribute people across behavior categories with engagement bias.
-
-    Higher engagement_bias (0–1) means more people in positive behaviors.
-
-    Args:
-        people: Total number of people to distribute.
-        engagement_bias: 0.0 = all negative, 1.0 = all positive.
-
-    Returns:
-        BehaviorsSummary dict with counts summing to people.
-    """
-    summary = {k: 0 for k in BEHAVIOR_KEYS}
-    if people == 0:
-        return summary
-
-    for _ in range(people):
-        if random.random() < engagement_bias:
-            behavior = random.choice(_POSITIVE_BEHAVIORS)
-        else:
-            behavior = random.choice(_NEGATIVE_BEHAVIORS)
-        summary[behavior] += 1
-
-    return summary
 
 
 def generate_session(
@@ -48,7 +16,6 @@ def generate_session(
     start_time: datetime,
     duration_minutes: int = 30,
     tick_interval: int = 5,
-    people_range: tuple[int, int] = (8, 25),
 ) -> tuple[list[dict], dict]:
     """Generate a synthetic session with realistic engagement patterns.
 
@@ -60,7 +27,6 @@ def generate_session(
         start_time: UTC start time for the session.
         duration_minutes: Session length in minutes.
         tick_interval: Seconds between ticks.
-        people_range: (min, max) people detected per tick.
 
     Returns:
         Tuple of (tick_payloads, summary_payload).
@@ -87,19 +53,10 @@ def generate_session(
         raw_score = base_engagement + amplitude * math.sin(phase) + random.gauss(0, noise_scale)
         score = max(0, min(100, round(raw_score)))
 
-        # People count varies slightly per tick
-        people = random.randint(*people_range)
-
-        # Distribute behaviors based on engagement level
-        engagement_bias = score / 100.0
-        behaviors = _distribute_behaviors(people, engagement_bias)
-
         payload = build_tick_payload(
             device_id=device_id,
             session_id=session_id,
             engagement_score=score,
-            behaviors_summary=behaviors,
-            people_detected=people,
             timestamp=timestamp,
         )
         ticks.append(payload)

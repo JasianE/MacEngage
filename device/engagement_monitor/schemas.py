@@ -9,8 +9,6 @@ def build_tick_payload(
     device_id: str,
     session_id: str,
     engagement_score: int,
-    behaviors_summary: dict,
-    people_detected: int,
     timestamp: datetime | None = None,
 ) -> dict:
     """Construct a metric-tick payload conforming to metric-tick.v1 schema.
@@ -19,8 +17,6 @@ def build_tick_payload(
         device_id: Device identifier.
         session_id: Active session UUID.
         engagement_score: Clamped [0, 100] engagement score.
-        behaviors_summary: Dict of behavior counts.
-        people_detected: Total people detected in frame.
         timestamp: UTC timestamp. Defaults to now.
 
     Returns:
@@ -33,8 +29,6 @@ def build_tick_payload(
         "sessionId": session_id,
         "timestamp": ts.isoformat(),
         "engagementScore": engagement_score,
-        "behaviorsSummary": behaviors_summary,
-        "peopleDetected": people_detected,
     }
 
 

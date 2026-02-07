@@ -49,7 +49,7 @@
 
 - [X] T011 [P] [US1] Implement camera capture in `device/engagement_monitor/camera.py` — wrap `picamera2` with `create_preview_configuration` at 640×480 RGB888, provide `capture_frame()` returning numpy RGB array, `start()`/`stop()` lifecycle methods
 - [X] T012 [P] [US1] Implement TFLite detector in `device/engagement_monitor/detector.py` — load `model/model_unquant.tflite` and `model/labels.txt`, provide `detect(frame) -> list[tuple[str, float]]` that resizes frame to 224×224, normalizes to [-1,1], runs inference, returns list of `(behavior_label, confidence)` pairs above the configured confidence threshold
-- [X] T013 [US1] Implement engagement scorer in `device/engagement_monitor/scorer.py` — provide `compute_score(detections, weights) -> tuple[int, dict]` that takes a list of `(behavior_label, confidence)` detections and weight config, counts behaviors into a BehaviorsSummary dict, computes mean of per-person weights, clamps to [0,100], returns `(engagementScore, behaviorsSummary)`
+- [X] T013 [US1] Implement engagement scorer in `device/engagement_monitor/scorer.py` — provide `compute_score(detections, weights) -> int` that takes a list of `(behavior_label, confidence)` detections and weight config, computes mean detected-label weight, clamps to [0,100], and returns `engagementScore`
 - [X] T014 [P] [US1] Implement terminal indicator in `device/engagement_monitor/indicator.py` — provide `show(score: int)` that prints a single-line ANSI color-coded bar (green ≥70, yellow ≥40, red <40) with numeric score, using `\r` carriage return for in-place updates
 - [X] T015 [US1] Implement main tick loop in `device/engagement_monitor/main.py` — on startup: load config (T008), initialize camera (T011), load detector (T012), initialize emitter (T010); provide `run_session(session_id, device_id)` that every `tickIntervalSeconds`: captures frame → detects behaviors → computes score → builds tick payload (T009) → emits to Firestore (T010) → updates indicator (T014); accept keyboard input: `s` to start session, `e` to end session, `q` to quit
 - [X] T016 [US1] Wire up `device/engagement_monitor/__main__.py` entry point so `python -m engagement_monitor` launches `main.py` with device ID from environment variable `DEVICE_ID` (default: hostname)
@@ -113,7 +113,7 @@
 - [X] T026 [P] Create `device/README.md` with project overview, setup instructions summary, and link to `specs/001-engagement-monitor/quickstart.md`
 - [X] T027 Validate full quickstart flow end-to-end per `specs/001-engagement-monitor/quickstart.md` — verify setup steps, run instructions, and troubleshooting entries are accurate
 - [X] T028 [P] Add graceful shutdown handling in `device/engagement_monitor/main.py` — catch `SIGINT`/`SIGTERM`, end active session cleanly (emit summary), stop camera, close Firestore connection, exit with code 0
-- [X] T029 Handle edge case: no people detected in frame in `device/engagement_monitor/scorer.py` — return `engagementScore: 0` and all-zero `behaviorsSummary` with `peopleDetected: 0` when detection list is empty
+- [X] T029 Handle edge case: no valid detections in frame in `device/engagement_monitor/scorer.py` — return `engagementScore: 0` when detection list is empty or has no known labels
 
 ---
 

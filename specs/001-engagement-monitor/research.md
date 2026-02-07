@@ -134,26 +134,26 @@ def show_indicator(score: int) -> None:
 
 ---
 
-## R6: Scoring Logic — Aggregate Behavior Normalization
+## R6: Scoring Logic — Score-Only Demo Mode
 
-**Decision**: For each tick, count the number of people detected per behavior class, compute a weighted proportion relative to total people detected, and scale to 0–100.
+**Decision**: For each tick, compute engagement from detected behavior labels only and emit a score-only payload (no people counts, no behavior summary fields).
 
-**Rationale**: The spec says `engagement_score = clamp(sum(behavior_scores), 0, 100)`. Since the TFLite model classifies each person into exactly one behavior class, and we have a group, the per-tick aggregate needs normalization. The approach: for each person, their classified behavior contributes its weight. The score is the mean weight across all detected people, clamped to [0, 100].
+**Rationale**: The demo model outputs group-level behavior predictions rather than per-person tracking. Score-only payloads keep contracts simple, align with privacy goals, and avoid implying unsupported person-count precision.
 
 **Formula**:
 ```
-For N people detected in a tick, each classified into behavior b_i:
-  raw_score = (1/N) * Σ weight(b_i)  for i in 1..N
+For K detected labels in a tick, with behavior b_i:
+  raw_score = (1/K) * Σ weight(b_i)  for i in 1..K
   engagement_score = clamp(raw_score, 0, 100)
 
-If N = 0:
+If K = 0:
   engagement_score = 0
 ```
 
 This naturally produces a 0–100 range since the maximum weight is 100 (`raising_hand`) and all weights are ≤ 100.
 
 **Alternatives Considered**:
-- **Sum without normalization**: Would scale with group size — a group of 20 would always score higher than a group of 5. Rejected.
+- **Sum without normalization**: Would scale with number of detected labels in a tick and be unstable. Rejected.
 - **Max-only**: Would lose information about the overall group state. Rejected.
 - **Majority-vote single class**: Would discard nuance. Rejected.
 
@@ -169,4 +169,4 @@ This naturally produces a 0–100 range since the maximum weight is 100 (`raisin
 | Firebase service choice | Firestore (not RTDB) — better queries, TTL, structured collections |
 | Firebase ARM64 compat | `firebase-admin` is pure Python, ARM64 transitive deps have wheels |
 | Local indicator | Terminal ANSI color-coded bar + numeric score, no extra hardware |
-| Scoring normalization | Mean of per-person behavior weights, clamped [0, 100] |
+| Scoring normalization | Mean of detected behavior weights, clamped [0, 100] |

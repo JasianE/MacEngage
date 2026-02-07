@@ -68,15 +68,13 @@ def run_session(
         detections = detector.detect(frame, confidence_threshold)
 
         # 3. Compute engagement score
-        score, behaviors_summary, people_detected = compute_score(detections, config)
+        score = compute_score(detections, config)
 
         # 4. Build tick payload
         payload = build_tick_payload(
             device_id=device_id,
             session_id=session_id,
             engagement_score=score,
-            behaviors_summary=behaviors_summary,
-            people_detected=people_detected,
         )
 
         # 5. Emit to Firestore

@@ -48,44 +48,15 @@ A single point-in-time aggregate observation.
 | `sessionId` | string (UUID v4) | Required, FK → Session | Session this tick belongs to |
 | `timestamp` | ISO 8601 datetime | Required | UTC timestamp of this observation |
 | `engagementScore` | integer | Required, range [0, 100] | Weighted aggregate engagement score |
-| `behaviorsSummary` | BehaviorsSummary | Required | Aggregate behavior counts for this tick |
-| `peopleDetected` | integer | Required, range [0, ∞) | Total number of people detected in frame |
 
 **Validation Rules**:
 - `engagementScore` MUST be in range [0, 100] (clamped)
-- `behaviorsSummary` MUST contain all 8 defined behaviors with non-negative integer counts
-- Sum of all behavior counts MUST equal `peopleDetected`
 - `sessionId` MUST reference an active session
 - `timestamp` MUST be within the session's active period
 
 ---
 
-### 3. BehaviorsSummary
-
-Aggregate count per behavior across the observed group for one tick. Embedded in MetricTick.
-
-| Field | Type | Constraints | Description |
-|---|---|---|---|
-| `raising_hand` | integer | ≥ 0 | Count of people detected raising hand |
-| `writing_notes` | integer | ≥ 0 | Count of people detected writing notes |
-| `looking_at_board` | integer | ≥ 0 | Count of people detected looking at board |
-| `on_phone` | integer | ≥ 0 | Count of people detected on phone |
-| `head_down` | integer | ≥ 0 | Count of people detected with head down |
-| `talking_to_group` | integer | ≥ 0 | Count of people detected talking to group |
-| `hands_on_head` | integer | ≥ 0 | Count of people detected with hands on head |
-| `looking_away_long` | integer | ≥ 0 | Count of people detected looking away |
-
-**Validation Rules**:
-- All fields MUST be non-negative integers
-- All 8 behavior fields MUST be present (no partial summaries)
-
-**Categories**:
-- **Positive**: `raising_hand`, `writing_notes`, `looking_at_board`
-- **Negative/Neutral**: `on_phone`, `head_down`, `talking_to_group`, `hands_on_head`, `looking_away_long`
-
----
-
-### 4. SessionSummary
+### 3. SessionSummary
 
 Aggregate statistics emitted when a session ends. Embedded in the session close payload.
 
@@ -108,7 +79,7 @@ Aggregate statistics emitted when a session ends. Embedded in the session close 
 
 ---
 
-### 5. WeightConfiguration
+### 4. WeightConfiguration
 
 Configurable mapping of behavior labels to numeric scoring weights.
 
@@ -168,8 +139,7 @@ firestore/
 │               ├── sessionId
 │               ├── timestamp
 │               ├── engagementScore
-│               ├── behaviorsSummary
-│               └── peopleDetected
+│               └── (no additional tick fields)
 ```
 
 **Design Rationale**:
@@ -186,6 +156,5 @@ firestore/
 Device (1) ──produces──> (N) Session
 Session (1) ──contains──> (N) MetricTick
 Session (1) ──has──> (1) SessionSummary
-MetricTick (1) ──embeds──> (1) BehaviorsSummary
 Device (1) ──loads──> (1) WeightConfiguration
 ```

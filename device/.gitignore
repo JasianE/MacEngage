@@ -1,5 +1,6 @@
 .venv/
 model/*.tflite
 config/service-account-key.json
+training_data/
 __pycache__/
 *.pyc

@@ -52,11 +52,58 @@ python -m synthetic --sessions 5
 python -m synthetic --sessions 3 --dry-run
 ```
 
+## Training Photo Capture (for Teachable Machine)
+
+Use the Pi camera to collect labeled training photos with an Enter-to-start / Enter-to-stop flow.
+
+### 1) Configure capture settings
+
+Edit `config/training_capture.json`:
+
+```json
+{
+  "outputDir": "training_data",
+  "label": "engaged",
+  "intervalSeconds": 0.5,
+  "width": 640,
+  "height": 480,
+  "imageFormat": "jpg",
+  "jpegQuality": 95,
+  "maxPhotosPerRun": 0,
+  "flip180": true,
+  "swapRedBlue": true
+}
+```
+
+- Set `label` to the class you are collecting (example: `engaged`, `distracted`).
+- Set `maxPhotosPerRun` to `0` for unlimited photos until you stop manually.
+- Keep `flip180: true` for upside-down camera mounting.
+- Keep `swapRedBlue: true` if colors look incorrect (red/blue channel swap).
+
+### 2) Run capture
+
+```bash
+python -m training_capture
+```
+
+Controls while running:
+- Press **Enter** once to **start** taking photos
+- Press **Enter** again to **stop**
+- Press **Ctrl+C** to quit
+
+Photos are saved to: `training_data/<label>/`
+
+### 3) Collect multiple classes
+
+After finishing one class, change `label` in `config/training_capture.json` and run the script again.
+Upload each label folder to Google Teachable Machine as separate classes.
+
 ## Project Structure
 
 ```
 device/
 ├── config/weights.json          # Behavior weights & scoring config
+├── config/training_capture.json # Training photo capture config
 ├── model/                       # TFLite model files (not in git)
 ├── schemas/                     # JSON schemas for payload validation
 ├── engagement_monitor/          # Main application package
@@ -69,6 +116,8 @@ device/
 │   ├── indicator.py             # Terminal display
 │   ├── config.py                # Weight config loading & validation
 │   └── schemas.py               # Payload construction
+├── training_capture/            # Teachable Machine data collection
+│   └── __main__.py              # CLI entry point
 └── synthetic/                   # Synthetic data generation
     ├── generator.py             # Session data generator
     └── __main__.py              # CLI entry point

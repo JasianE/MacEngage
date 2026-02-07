@@ -16,7 +16,7 @@ def test_session_manager_lifecycle():
     assert summary.session_id == session.session_id
     assert summary.tick_count == 2
     assert 0 <= summary.average_engagement <= 100
-    assert summary.timeline_ref.endswith("/ticks")
+    assert summary.timeline_ref.endswith("/liveData")
 
 
 def test_session_manager_prevents_overlapping_sessions():

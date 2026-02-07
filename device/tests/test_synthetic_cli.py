@@ -23,6 +23,7 @@ def test_synthetic_cli_dry_run_outputs_parseable_json_payload():
     payload, _ = decoder.raw_decode(out[start:])
 
     assert "session" in payload
-    assert "ticks" in payload
-    assert payload["session"]["status"] == "completed"
-    assert len(payload["ticks"]) > 0
+    assert "liveData" in payload
+    assert "overallScore" in payload["session"]
+    assert isinstance(payload["session"]["comments"], list)
+    assert len(payload["liveData"]) > 0

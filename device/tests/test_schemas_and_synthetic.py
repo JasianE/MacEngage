@@ -18,18 +18,8 @@ def test_tick_and_summary_payloads_conform_to_schema():
 
     sid = "123e4567-e89b-12d3-a456-426614174000"
     now = datetime.now(timezone.utc)
-    behaviors = {
-        "raising_hand": 1,
-        "writing_notes": 2,
-        "looking_at_board": 3,
-        "on_phone": 0,
-        "head_down": 0,
-        "talking_to_group": 0,
-        "hands_on_head": 0,
-        "looking_away_long": 0,
-    }
 
-    tick = build_tick_payload("dev-1", sid, 85, behaviors, 6, now)
+    tick = build_tick_payload("dev-1", sid, 85, now)
     summary = build_summary_payload(
         "dev-1",
         sid,
@@ -38,7 +28,7 @@ def test_tick_and_summary_payloads_conform_to_schema():
         1,
         85.0,
         1,
-        f"sessions/{sid}/ticks",
+        f"sessions/{sid}/liveData",
     )
 
     jsonschema.validate(tick, metric_schema)
@@ -54,7 +44,6 @@ def test_synthetic_generator_outputs_schema_valid_payloads():
         start_time=datetime.now(timezone.utc),
         duration_minutes=1,
         tick_interval=5,
-        people_range=(3, 5),
     )
 
     assert len(ticks) > 0

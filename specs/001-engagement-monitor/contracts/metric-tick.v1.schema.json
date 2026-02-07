@@ -9,9 +9,7 @@
     "deviceId",
     "sessionId",
     "timestamp",
-    "engagementScore",
-    "behaviorsSummary",
-    "peopleDetected"
+    "engagementScore"
   ],
   "additionalProperties": false,
   "properties": {
@@ -41,73 +39,6 @@
       "minimum": 0,
       "maximum": 100,
       "description": "Weighted aggregate engagement score for this tick, clamped to [0, 100]."
-    },
-    "peopleDetected": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Total number of people detected in the frame for this tick."
-    },
-    "behaviorsSummary": {
-      "$ref": "#/$defs/BehaviorsSummary"
-    }
-  },
-  "$defs": {
-    "BehaviorsSummary": {
-      "type": "object",
-      "description": "Aggregate count of each defined behavior detected across the group.",
-      "required": [
-        "raising_hand",
-        "writing_notes",
-        "looking_at_board",
-        "on_phone",
-        "head_down",
-        "talking_to_group",
-        "hands_on_head",
-        "looking_away_long"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "raising_hand": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected raising hand."
-        },
-        "writing_notes": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected writing notes."
-        },
-        "looking_at_board": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected looking at board."
-        },
-        "on_phone": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected on phone."
-        },
-        "head_down": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected with head down."
-        },
-        "talking_to_group": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected talking to group."
-        },
-        "hands_on_head": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected with hands on head."
-        },
-        "looking_away_long": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Count of people detected looking away."
-        }
-      }
     }
   }
 }

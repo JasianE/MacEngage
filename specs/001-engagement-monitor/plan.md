@@ -25,13 +25,13 @@ Build a device-side engagement monitoring system on a Raspberry Pi 5 that uses a
 
 Verify compliance with Live Student Engagement Monitor Constitution (v1.0.0):
 
-- **Privacy-First**: ✅ No per-person data in any schema. BehaviorsSummary is aggregate counts only. No media fields in any contract. No face recognition, no identification.
+- **Privacy-First**: ✅ No per-person data in any schema. Metric ticks contain score-only aggregate output. No media fields in any contract. No face recognition, no identification.
 - **Edge-First**: ✅ All inference via TFLite on Pi. Only JSON metric payloads transmitted to Firestore. Frames processed in-memory via picamera2, never persisted or transmitted.
 - **Demo-Safe**: ✅ No room-specific configuration. Generic camera view of any seated group. Default weights work out of the box. Setup < 2 minutes.
 - **Configurable Scoring**: ✅ `config/weights.json` defines all behavior weights externally. Validated on startup. No code changes needed to adjust scoring.
 - **Clear Contracts**: ✅ Three versioned JSON schemas: metric-tick.v1, session-summary.v1, weight-config.v1. `schemaVersion` field in every emitted payload.
 - **Simplicity**: ✅ Single Python process. TFLite for inference. Firestore for storage. Terminal ANSI for indicator. No web server, no microservices, no message broker.
-- **Transparency**: ✅ Scoring formula: mean of per-person behavior weights, clamped [0,100]. Intermediate detection counts visible in behaviorsSummary. Debug logging of inference results.
+- **Transparency**: ✅ Scoring formula: mean of detected behavior weights, clamped [0,100]. Debug logging of inference results.
 - **Non-Goals**: ✅ No streaming, no recording, no individual tracking, no identification, no attendance. None present in any contract or data model.
 
 **Status**: [x] PASS / [ ] NEEDS REVIEW / [ ] BLOCKED

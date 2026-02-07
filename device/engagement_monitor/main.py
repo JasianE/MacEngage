@@ -60,6 +60,7 @@ def run_session(
 
     while not stop_event.is_set():
         tick_start = time.monotonic()
+        tick_timestamp = datetime.now(timezone.utc)
 
         # 1. Capture frame
         frame = camera.capture_frame()
@@ -68,19 +69,19 @@ def run_session(
         detections = detector.detect(frame, confidence_threshold)
 
         # 3. Compute engagement score
-        score, behaviors_summary, people_detected = compute_score(detections, config)
+        score = compute_score(detections, config)
 
         # 4. Build tick payload
         payload = build_tick_payload(
             device_id=device_id,
             session_id=session_id,
             engagement_score=score,
-            behaviors_summary=behaviors_summary,
-            people_detected=people_detected,
+            timestamp=tick_timestamp,
         )
 
         # 5. Emit to Firestore
-        emitter.emit_tick(session_id, payload)
+        time_since_start = int((tick_timestamp - session.started_at).total_seconds())
+        emitter.emit_tick(session_id, payload, time_since_start)
 
         # 6. Record tick in session manager
         session_mgr.record_tick(score)

@@ -15,14 +15,14 @@ A facilitator places the device in a room and starts a monitoring session. While
 
 **Why this priority**: This is the core value loop of the product. Without real-time detection, scoring, and emission, nothing else functions. A working session with live metrics is the minimum viable demonstration.
 
-**Independent Test**: Can be fully tested by starting a session, allowing the device to observe a group (or synthetic input), and confirming that JSON metric payloads are emitted at each tick with correct structure, engagement scores, and behavior summaries. The local glanceable indicator must also reflect the current score.
+**Independent Test**: Can be fully tested by starting a session, allowing the device to observe a group (or synthetic input), and confirming that JSON metric payloads are emitted at each tick with correct structure and engagement scores. The local glanceable indicator must also reflect the current score.
 
 **Acceptance Scenarios**:
 
 1. **Given** the device is powered on and pointed at a seated group, **When** a facilitator starts a session, **Then** the device begins emitting JSON metric payloads at each configured tick interval.
-2. **Given** a session is active, **When** the device detects behaviors in the group, **Then** each emitted payload contains an engagement score derived from the weighted behavior summary, clamped between 0 and 100.
+2. **Given** a session is active, **When** the device detects behaviors in the group, **Then** each emitted payload contains an engagement score derived from weighted detections, clamped between 0 and 100.
 3. **Given** a session is active, **When** the facilitator looks at the device's local indicator, **Then** they see a simple, glanceable representation of the current engagement score (e.g., color-coded light or small display) without detailed per-person data.
-4. **Given** a session is active, **When** a tick completes, **Then** the emitted JSON payload includes schemaVersion, deviceId, sessionId, timestamp, engagement score, and an aggregate behaviors summary — with no media or personally identifiable information.
+4. **Given** a session is active, **When** a tick completes, **Then** the emitted JSON payload includes schemaVersion, deviceId, sessionId, timestamp, and engagement score — with no media or personally identifiable information.
 
 ---
 
@@ -71,17 +71,17 @@ A demo operator generates or replays pre-built synthetic sessions so the connect
 
 1. **Given** the device or a companion utility is available, **When** a demo operator triggers synthetic session generation, **Then** the system produces one or more complete session data sets (tick payloads + session summary) with realistic engagement patterns.
 2. **Given** synthetic sessions have been generated, **When** the dashboard queries for historical data, **Then** the synthetic sessions appear alongside any real sessions and are visually indistinguishable in format.
-3. **Given** synthetic sessions are generated, **When** reviewing their payloads, **Then** each payload conforms to the same JSON schema as real session payloads (including schemaVersion, deviceId, sessionId, timestamp, engagement score, behaviors summary).
+3. **Given** synthetic sessions are generated, **When** reviewing their payloads, **Then** each payload conforms to the same JSON schema as real session payloads (including schemaVersion, deviceId, sessionId, timestamp, and engagement score).
 
 ---
 
 ### Edge Cases
 
-- What happens when the device camera cannot detect any people in the frame? The system should emit a tick with zero detected behaviors and an engagement score of 0, and the local indicator should reflect "no engagement detected."
+- What happens when the device camera cannot confidently detect a known behavior? The system should emit a tick with an engagement score of 0, and the local indicator should reflect "no engagement detected."
 - What happens if the device loses power or crashes mid-session? The session should be recoverable or at minimum the already-emitted ticks should remain valid. Upon restart, the device should be in an idle state (no orphaned active session).
 - What happens when all detected behaviors in a tick are negative/neutral (weight = 0)? The engagement score should be 0 — the clamp lower bound.
 - What happens when the sum of weighted behavior scores exceeds 100? The engagement score should be clamped to 100 — the clamp upper bound.
-- How does the system handle a tick where the inference model reports low-confidence detections? The system should apply a confidence threshold; detections below the threshold are excluded from the behavior summary for that tick.
+- How does the system handle a tick where the inference model reports low-confidence detections? The system should apply a confidence threshold; detections below the threshold are excluded from scoring for that tick.
 - What happens if no weight configuration file is found at startup? The device should fall back to the documented default weights and log a notice.
 
 ---
@@ -94,7 +94,7 @@ A demo operator generates or replays pre-built synthetic sessions so the connect
 
 - **FR-001**: The device MUST perform on-device inference to detect the following positive behaviors in a seated group: `raising_hand`, `writing_notes`, `looking_at_board`.
 - **FR-002**: The device MUST perform on-device inference to detect the following negative/neutral behaviors: `on_phone`, `head_down`, `talking_to_group`, `hands_on_head`, `looking_away_long`.
-- **FR-003**: Detection output MUST be represented as an aggregate summary per time tick — a count or presence indicator for each behavior across the observed group, not per individual person.
+- **FR-003**: Detection output MUST be used for group-level scoring only and MUST NOT include per-person counts.
 - **FR-004**: The device MUST NOT store, transmit, or expose any per-person identification data, images, or video frames.
 
 #### Engagement Scoring
@@ -113,7 +113,7 @@ A demo operator generates or replays pre-built synthetic sessions so the connect
 
 #### Data Emission
 
-- **FR-013**: Each periodic metric payload MUST be a JSON object containing: `schemaVersion`, `deviceId`, `sessionId`, `timestamp`, `engagementScore`, and `behaviorsSummary`.
+- **FR-013**: Each periodic metric payload MUST be a JSON object containing: `schemaVersion`, `deviceId`, `sessionId`, `timestamp`, and `engagementScore`.
 - **FR-014**: No payload — periodic or summary — MUST contain any media (images, audio, or video).
 - **FR-015**: The schema version MUST be included in every payload to support forward-compatible consumers.
 
@@ -136,9 +136,8 @@ A demo operator generates or replays pre-built synthetic sessions so the connect
 ### Key Entities
 
 - **Session**: A bounded monitoring period with a unique ID, start time, end time, and a collection of metric ticks. A session transitions through states: idle → active → completed.
-- **Metric Tick**: A single point-in-time observation containing a timestamp, aggregate behavior summary, and computed engagement score. Belongs to exactly one session.
-- **Behavior Summary**: An aggregate count or presence map of each defined behavior detected in the group during one tick. Behaviors are categorized as positive (`raising_hand`, `writing_notes`, `looking_at_board`) or negative/neutral (`on_phone`, `head_down`, `talking_to_group`, `hands_on_head`, `looking_away_long`).
-- **Engagement Score**: A numeric value in the range [0, 100] computed per tick from the weighted behavior summary.
+- **Metric Tick**: A single point-in-time observation containing a timestamp and computed engagement score. Belongs to exactly one session.
+- **Engagement Score**: A numeric value in the range [0, 100] computed per tick from weighted behavior detections.
 - **Weight Configuration**: A mapping of each behavior label to a numeric weight, used in scoring. Has documented defaults and can be overridden.
 - **Session Summary**: An aggregate record produced when a session ends, containing duration, average engagement score, and a reference to the session's tick timeline.
 - **Device**: The physical unit performing observation and inference. Identified by a unique `deviceId`.
@@ -152,7 +151,7 @@ A demo operator generates or replays pre-built synthetic sessions so the connect
 - **Local network availability**: The device is assumed to have local network connectivity for emitting JSON payloads (e.g., Wi-Fi). Offline buffering and retry is not in scope for the initial version.
 - **Dashboard is a separate system**: This spec covers the device-side only. The dashboard that consumes and visualizes the emitted metrics is a separate feature/system.
 - **Synthetic data utility**: The synthetic session generator may run on the device itself or as a companion utility on a connected machine — either approach satisfies FR-018.
-- **Confidence threshold**: A sensible default confidence threshold (e.g., 60%) is applied to inference detections. Detections below this threshold are excluded from the behavior summary. This threshold is configurable alongside behavior weights.
+- **Confidence threshold**: A sensible default confidence threshold (e.g., 60%) is applied to inference detections. Detections below this threshold are excluded from scoring. This threshold is configurable alongside behavior weights.
 - **Hackathon demo context**: Stability takes precedence over comprehensive error recovery. The system should be reliable for a multi-hour demo session without requiring restarts.
 
 ---

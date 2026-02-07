@@ -1,11 +1,12 @@
-// SessionPage.jsx
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { LineChart } from "@mui/x-charts/LineChart";
+import ScoreDisplay from "../components/ScoreDisplay";
 import StatTracker from "../components/StatTracker";
 
 function SessionPage() {
   const { sessionId } = useParams();
+  const navigate = useNavigate(); // <-- hook for navigation
   const [session, setSession] = useState(null);
   const [newComment, setNewComment] = useState("");
 
@@ -34,7 +35,7 @@ function SessionPage() {
     };
 
     const data = mockSessions[sessionId];
-    setSession(mockSessions["abc123"]);
+    setSession(data || null);
   }, [sessionId]);
 
   if (!session) return <p className="p-8 text-gray-300">Loading session...</p>;
@@ -51,6 +52,14 @@ function SessionPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-8">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="mb-4 bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition cursor-pointer"
+      >
+        &larr; Back to Dashboard
+      </button>
+
       {/* Header */}
       <h1 className="text-4xl font-bold mb-2 text-blue-800">{session.title}</h1>
       <p className="text-xl mb-6">Overall Engagement Score: {session.overallScore}</p>
@@ -85,7 +94,7 @@ function SessionPage() {
           />
           <button
             onClick={handleAddComment}
-            className="bg-blue-700 hover:bg-blue-800 transition text-white px-4 py-2 rounded cursor-pointer"
+            className="bg-blue-700 hover:bg-blue-800 transition text-white px-4 py-2 rounded"
           >
             Submit
           </button>

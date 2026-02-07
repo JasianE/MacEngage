@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 // Mock data — replace with API call
 const mockSessions = [
-  { id: "sess_001", name: "CS101 - Room 402", date: "2026-02-07 10:00 AM" },
-  { id: "sess_002", name: "Math 201 - Room 101", date: "2026-02-06 2:00 PM" },
-  { id: "sess_003", name: "Physics 105 - Lab 3", date: "2026-02-05 11:00 AM" },
+  { id: "abc123", name: "CS101 - Room 402", date: "2026-02-07 10:00 AM" },
+  { id: "abc123", name: "Math 201 - Room 101", date: "2026-02-06 2:00 PM" },
+  { id: "abc123", name: "Physics 105 - Lab 3", date: "2026-02-05 11:00 AM" },
 ];
 
 export default function Dashboard() {

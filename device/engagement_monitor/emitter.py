@@ -124,6 +124,49 @@ def emit_summary(session_id: str, summary: dict) -> None:
     logger.debug("Session summary written: sessions/%s", session_id)
 
 
+def fetch_pending_command(device_id: str) -> tuple[str, dict] | None:
+    """Fetch the oldest pending remote command for a device.
+
+    Command documents are expected at:
+      devices/{deviceId}/commands/{commandId}
+
+    Returns:
+        Tuple of (command_id, command_dict) or None if no pending command.
+    """
+    db = get_db()
+    cmd_ref = (
+        db.collection("devices")
+        .document(device_id)
+        .collection("commands")
+        .where("status", "==", "pending")
+        .limit(1)
+    )
+    docs = list(cmd_ref.stream())
+    if not docs:
+        return None
+    doc = docs[0]
+    return doc.id, (doc.to_dict() or {})
+
+
+def mark_command(device_id: str, command_id: str, status: str, message: str | None = None) -> None:
+    """Mark a remote command as processed/rejected/error."""
+    db = get_db()
+    update_data = {
+        "status": status,
+        "processedAt": firestore.SERVER_TIMESTAMP,
+    }
+    if message:
+        update_data["message"] = message
+
+    (
+        db.collection("devices")
+        .document(device_id)
+        .collection("commands")
+        .document(command_id)
+        .set(update_data, merge=True)
+    )
+
+
 def close():
     """Clean up Firebase resources."""
     global _app, _db

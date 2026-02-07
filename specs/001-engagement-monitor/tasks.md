@@ -97,9 +97,9 @@
 
 ### Implementation
 
-- [ ] T022 [US4] Implement synthetic data generator in `device/synthetic/generator.py` — provide `generate_session(device_id, start_time, duration_minutes) -> tuple[list[dict], dict]` that produces a list of tick payloads and a session summary with realistic engagement patterns (sine wave + random noise for score variation, plausible behavior distributions), all conforming to metric-tick.v1 and session-summary.v1 schemas
-- [ ] T023 [US4] Implement synthetic CLI entry point in `device/synthetic/__main__.py` — accept `--sessions N` (default 5), `--device-id` (default hostname), `--duration` (default 30 min); for each session: generate data (T022), write session document + all tick docs to Firestore (T010), print progress; uses same emitter and schema builder as real sessions
-- [ ] T024 [US4] Add `--dry-run` flag to `device/synthetic/__main__.py` — when set, print generated payloads to stdout as JSON instead of writing to Firestore, for validation without cloud access
+- [X] T022 [US4] Implement synthetic data generator in `device/synthetic/generator.py` — provide `generate_session(device_id, start_time, duration_minutes) -> tuple[list[dict], dict]` that produces a list of tick payloads and a session summary with realistic engagement patterns (sine wave + random noise for score variation, plausible behavior distributions), all conforming to metric-tick.v1 and session-summary.v1 schemas
+- [X] T023 [US4] Implement synthetic CLI entry point in `device/synthetic/__main__.py` — accept `--sessions N` (default 5), `--device-id` (default hostname), `--duration` (default 30 min); for each session: generate data (T022), write session document + all tick docs to Firestore (T010), print progress; uses same emitter and schema builder as real sessions
+- [X] T024 [US4] Add `--dry-run` flag to `device/synthetic/__main__.py` — when set, print generated payloads to stdout as JSON instead of writing to Firestore, for validation without cloud access
 
 **Checkpoint**: Synthetic sessions populate Firestore. Dashboard can display historical engagement data. All 4 user stories are independently functional.
 
@@ -109,11 +109,11 @@
 
 **Purpose**: Stability, documentation, and demo-readiness improvements
 
-- [ ] T025 [P] Add structured logging throughout all modules in `device/engagement_monitor/` — use Python `logging` with format `%(asctime)s %(levelname)s %(name)s %(message)s`, log inference results at DEBUG, tick emissions at INFO, errors at ERROR
-- [ ] T026 [P] Create `device/README.md` with project overview, setup instructions summary, and link to `specs/001-engagement-monitor/quickstart.md`
-- [ ] T027 Validate full quickstart flow end-to-end per `specs/001-engagement-monitor/quickstart.md` — verify setup steps, run instructions, and troubleshooting entries are accurate
-- [ ] T028 [P] Add graceful shutdown handling in `device/engagement_monitor/main.py` — catch `SIGINT`/`SIGTERM`, end active session cleanly (emit summary), stop camera, close Firestore connection, exit with code 0
-- [ ] T029 Handle edge case: no people detected in frame in `device/engagement_monitor/scorer.py` — return `engagementScore: 0` and all-zero `behaviorsSummary` with `peopleDetected: 0` when detection list is empty
+- [X] T025 [P] Add structured logging throughout all modules in `device/engagement_monitor/` — use Python `logging` with format `%(asctime)s %(levelname)s %(name)s %(message)s`, log inference results at DEBUG, tick emissions at INFO, errors at ERROR
+- [X] T026 [P] Create `device/README.md` with project overview, setup instructions summary, and link to `specs/001-engagement-monitor/quickstart.md`
+- [X] T027 Validate full quickstart flow end-to-end per `specs/001-engagement-monitor/quickstart.md` — verify setup steps, run instructions, and troubleshooting entries are accurate
+- [X] T028 [P] Add graceful shutdown handling in `device/engagement_monitor/main.py` — catch `SIGINT`/`SIGTERM`, end active session cleanly (emit summary), stop camera, close Firestore connection, exit with code 0
+- [X] T029 Handle edge case: no people detected in frame in `device/engagement_monitor/scorer.py` — return `engagementScore: 0` and all-zero `behaviorsSummary` with `peopleDetected: 0` when detection list is empty
 
 ---
 

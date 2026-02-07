@@ -99,7 +99,7 @@ cp labels.txt ~/MacEngage/device/model/
 ```bash
 cd ~/MacEngage/device
 source .venv/bin/activate
-python -m engagement_monitor.main
+python -m engagement_monitor
 ```
 
 **Controls during a session:**
@@ -112,7 +112,7 @@ The terminal will display a glanceable color-coded engagement bar that updates e
 ### Generate synthetic demo sessions
 
 ```bash
-python -m engagement_monitor.synthetic --sessions 5
+python -m synthetic --sessions 5
 ```
 
 This writes 5 synthetic historical sessions to Firestore with realistic engagement patterns.

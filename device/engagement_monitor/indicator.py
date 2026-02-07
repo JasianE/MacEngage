@@ -1,5 +1,9 @@
 """Terminal-based glanceable engagement indicator."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def show(score: int) -> None:
     """Display a single-line ANSI color-coded engagement bar.
@@ -26,4 +30,5 @@ def show(score: int) -> None:
     empty = 20 - filled
     bar = "█" * filled + "░" * empty
 
+    logger.debug("Indicator: score=%d, color=%s", score, "green" if score >= 70 else "yellow" if score >= 40 else "red")
     print(f"\r{color}Engagement: [{bar}] {score:3d}/100{reset}", end="", flush=True)

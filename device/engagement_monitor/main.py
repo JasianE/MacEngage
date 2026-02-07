@@ -1,6 +1,8 @@
 """Main tick loop — orchestrates camera, detection, scoring, and emission."""
 
 import logging
+import signal
+import sys
 import threading
 import time
 from datetime import datetime, timezone
@@ -147,9 +149,21 @@ def main(device_id: str) -> None:
 
     session_thread: threading.Thread | None = None
     stop_event = threading.Event()
+    shutdown_event = threading.Event()
+
+    def _signal_handler(signum, frame):
+        """Handle SIGINT/SIGTERM for graceful shutdown."""
+        sig_name = signal.Signals(signum).name
+        logger.info("Received %s — initiating graceful shutdown", sig_name)
+        shutdown_event.set()
+        if session_thread is not None and session_thread.is_alive():
+            stop_event.set()
+
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
 
     try:
-        while True:
+        while not shutdown_event.is_set():
             try:
                 cmd = input("\n> ").strip().lower()
             except EOFError:
@@ -214,6 +228,13 @@ def main(device_id: str) -> None:
             session_thread.join(timeout=10)
 
     finally:
+        # Ensure active session ends cleanly on any exit path
+        if session_thread is not None and session_thread.is_alive():
+            logger.info("Cleaning up active session on shutdown")
+            stop_event.set()
+            session_thread.join(timeout=10)
         camera.stop()
         emitter.close()
+        logger.info("Shutdown complete")
         print("[INFO] Goodbye.")
+        sys.exit(0)

@@ -20,7 +20,7 @@ DEFAULT_CONFIG = {
     "hands_on_head": 30,
     "looking_away_long": 20,
     "confidenceThreshold": 0.6,
-    "tickIntervalSeconds": 5,
+    "tickIntervalSeconds": 0.5,
 }
 
 BEHAVIOR_KEYS = [

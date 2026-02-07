@@ -21,18 +21,47 @@ See the full setup guide: [quickstart.md](../specs/001-engagement-monitor/quicks
 cd device
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
+
+# Required camera dependency (system package)
+sudo apt update && sudo apt install -y python3-picamera2
+
 pip install -r requirements.txt
 
 # Set Firebase credentials
 export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
 
-# Place model files
-cp model_unquant.tflite model/
-cp labels.txt model/
+# (Already done) model files should exist at:
+# model/model_unquant.tflite
+# model/labels.txt
 
-# Run
+# Run with verbose model-observation logs
+export LOG_LEVEL=INFO
 python -m engagement_monitor
 ```
+
+If `python3-picamera2` is installed but import still fails, your venv was likely
+created without `--system-site-packages`. Fix with either:
+
+```bash
+# Recommended: recreate venv with system site packages enabled
+rm -rf .venv
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+or temporary workaround:
+
+```bash
+export PYTHONPATH="/usr/lib/python3/dist-packages"
+```
+
+During runtime, you'll see logs like:
+
+- `Model sees top predictions: raising_hand=0.81, writing_notes=0.14, ...`
+- `Detections above threshold 0.60: raising_hand=0.81`
+
+This is the live visibility for what the model is currently seeing.
 
 ## Commands
 

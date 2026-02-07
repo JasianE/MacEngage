@@ -55,7 +55,7 @@ def create_session(session_id: str, device_id: str, started_at: str, title: str 
         "overallScore": 0,
         "comments": [],
     })
-    logger.info("Session created: sessions/%s (device=%s)", session_id, device_id)
+    logger.debug("Session created: sessions/%s (device=%s)", session_id, device_id)
 
 
 def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
@@ -73,7 +73,7 @@ def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
     db.collection("sessions").document(session_id).update({
         "overallScore": float(summary.get("averageEngagement", 0)),
     })
-    logger.info("Session completed: sessions/%s", session_id)
+    logger.debug("Session completed: sessions/%s", session_id)
 
 
 def emit_tick(session_id: str, payload: dict, time_since_start: int) -> str:
@@ -94,7 +94,7 @@ def emit_tick(session_id: str, payload: dict, time_since_start: int) -> str:
     }
     doc_ref = db.collection("sessions").document(session_id).collection("liveData").add(live_data)
     doc_id = doc_ref[1].id
-    logger.info("Tick emitted: sessions/%s/liveData/%s", session_id, doc_id)
+    # logger.info("Tick emitted: sessions/%s/liveData/%s", session_id, doc_id)
     return doc_id
 
 
@@ -107,7 +107,7 @@ def emit_session(session_id: str, session_data: dict) -> None:
     """
     db = get_db()
     db.collection("sessions").document(session_id).set(session_data, merge=True)
-    logger.info("Session document written: sessions/%s", session_id)
+    logger.debug("Session document written: sessions/%s", session_id)
 
 
 def emit_summary(session_id: str, summary: dict) -> None:
@@ -121,7 +121,7 @@ def emit_summary(session_id: str, summary: dict) -> None:
     db.collection("sessions").document(session_id).update({
         "overallScore": float(summary.get("averageEngagement", 0)),
     })
-    logger.info("Session summary written: sessions/%s", session_id)
+    logger.debug("Session summary written: sessions/%s", session_id)
 
 
 def close():

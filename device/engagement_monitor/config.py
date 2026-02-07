@@ -37,6 +37,10 @@ BEHAVIOR_KEYS = [
 _SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schemas" / "weight-config.v1.schema.json"
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "weights.json"
 
+# Last known-good config kept in memory so invalid reloads can safely fall back
+# to the previous valid values (rather than always resetting to defaults).
+_LAST_VALID_CONFIG: dict = dict(DEFAULT_CONFIG)
+
 
 def _load_schema() -> dict:
     """Load the weight-config JSON schema."""
@@ -68,25 +72,31 @@ def load_config(config_path: str | Path | None = None) -> dict:
     path = Path(config_path) if config_path else _CONFIG_PATH
     schema = _load_schema()
 
+    global _LAST_VALID_CONFIG
+
     if not path.exists():
         logger.warning("Config file not found at %s — using defaults", path)
-        return dict(DEFAULT_CONFIG)
+        _LAST_VALID_CONFIG = dict(DEFAULT_CONFIG)
+        return dict(_LAST_VALID_CONFIG)
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             config = json.load(f)
     except (json.JSONDecodeError, OSError) as exc:
         logger.error("Failed to read config file %s: %s — using defaults", path, exc)
-        return dict(DEFAULT_CONFIG)
+        _LAST_VALID_CONFIG = dict(DEFAULT_CONFIG)
+        return dict(_LAST_VALID_CONFIG)
 
     errors = _validate(config, schema)
     if errors:
         for err in errors:
             logger.error("Config validation error — %s", err)
         logger.warning("Invalid config rejected — using defaults")
-        return dict(DEFAULT_CONFIG)
+        _LAST_VALID_CONFIG = dict(DEFAULT_CONFIG)
+        return dict(_LAST_VALID_CONFIG)
 
     logger.info("Config loaded from %s", path)
+    _LAST_VALID_CONFIG = dict(config)
     return config
 
 
@@ -104,9 +114,12 @@ def reload_config(config_path: str | Path | None = None) -> tuple[dict, list[str
     path = Path(config_path) if config_path else _CONFIG_PATH
     schema = _load_schema()
 
+    global _LAST_VALID_CONFIG
+
     if not path.exists():
-        logger.warning("Config file not found at %s — using defaults", path)
-        return dict(DEFAULT_CONFIG), [f"Config file not found: {path}"]
+        msg = f"Config file not found: {path}"
+        logger.warning("%s — using previous valid config", msg)
+        return dict(_LAST_VALID_CONFIG), [msg]
 
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -114,13 +127,14 @@ def reload_config(config_path: str | Path | None = None) -> tuple[dict, list[str
     except (json.JSONDecodeError, OSError) as exc:
         msg = f"Failed to read config: {exc}"
         logger.error(msg)
-        return dict(DEFAULT_CONFIG), [msg]
+        return dict(_LAST_VALID_CONFIG), [msg]
 
     errors = _validate(config, schema)
     if errors:
         for err in errors:
             logger.error("Config validation error — %s", err)
-        return dict(DEFAULT_CONFIG), errors
+        return dict(_LAST_VALID_CONFIG), errors
 
     logger.info("Config reloaded from %s", path)
+    _LAST_VALID_CONFIG = dict(config)
     return config, []

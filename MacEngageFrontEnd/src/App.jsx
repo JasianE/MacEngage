@@ -5,6 +5,8 @@ import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
 import SignUp from "./pages/SignUp";
 import Landing from "./pages/LandingPage";
+import Dashboard from "./pages/Dashboard";
+import SessionPage from "./pages/SesssionPage";
 
 function App() {
   //Fetch data and have a component that handles the various alert popups
@@ -12,9 +14,13 @@ function App() {
     <>
     <Routes>
       <Route path='/' element = {<Landing/>} />
-      <Route path="/dashboard" element={<Home />} />
+      <Route path="/live-session" element={<Home />} /> {/*Live session here */}
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path ="/login" element={<LoginPage />} />
       <Route path ="/signup" element={<SignUp />} />
+      <Route path="/session/:sessionId" element={<SessionPage />} />
+      <Route path="*" element={<Landing />} />
+
     </Routes>
     </>
   );

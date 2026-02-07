@@ -69,6 +69,15 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
 
+*For Live Student Engagement Monitor (Constitution-driven tasks):*
+
+- [ ] T004 Create JSON schema for metrics payloads (Clear Contracts principle)
+- [ ] T005 [P] Setup configuration file structure for scoring weights (Configurable Scoring)
+- [ ] T006 [P] Initialize video capture with in-memory processing only—verify no disk writes (Privacy-First, Edge-First)
+- [ ] T007 Implement aggregate metrics structure (no per-person data structures) (Privacy-First)
+- [ ] T008 Configure structured logging with intermediate scoring steps (Transparency)
+- [ ] T009 Setup debug mode with visualization options (Transparency)
+
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---

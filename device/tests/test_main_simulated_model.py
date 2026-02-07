@@ -54,7 +54,7 @@ def test_run_session_with_simulated_model_output(monkeypatch):
             {"session_id": session_id, "device_id": device_id, "started_at": started_at}
         )
 
-    def _fake_emit_tick(_session_id: str, payload: dict):
+    def _fake_emit_tick(_session_id: str, payload: dict, _time_since_start: int):
         emitted_ticks.append(payload)
         return f"tick-{len(emitted_ticks)}"
 
@@ -102,5 +102,5 @@ def test_run_session_with_simulated_model_output(monkeypatch):
     assert summary_payload["sessionId"] == session.session_id
     assert summary_payload["tickCount"] == 3
     assert summary_payload["averageEngagement"] == 46.67
-    assert summary_payload["timelineRef"].endswith("/ticks")
+    assert summary_payload["timelineRef"].endswith("/liveData")
     jsonschema.validate(summary_payload, summary_schema)

@@ -37,22 +37,23 @@ def get_db():
     return _db
 
 
-def create_session(session_id: str, device_id: str, started_at: str) -> None:
+def create_session(session_id: str, device_id: str, started_at: str, title: str | None = None) -> None:
     """Create a session document in Firestore on session start.
 
-    Writes the initial session document with status 'active' and endedAt null.
+    Firebase model (canonical):
+    sessions/{sessionId} => {title, overallScore, comments}
 
     Args:
         session_id: Session UUID.
-        device_id: Device identifier.
-        started_at: ISO 8601 UTC timestamp string.
+        device_id: Device identifier (used for default title text only).
+        started_at: ISO 8601 UTC timestamp string (used for default title text only).
+        title: Optional session title override.
     """
     db = get_db()
     db.collection("sessions").document(session_id).set({
-        "deviceId": device_id,
-        "startedAt": started_at,
-        "status": "active",
-        "endedAt": None,
+        "title": title or f"Session {session_id[:8]} ({device_id}) {started_at[:19]}",
+        "overallScore": 0,
+        "comments": [],
     })
     logger.info("Session created: sessions/%s (device=%s)", session_id, device_id)
 
@@ -60,36 +61,40 @@ def create_session(session_id: str, device_id: str, started_at: str) -> None:
 def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
     """Update a session document on session end.
 
-    Sets endedAt, status to 'completed', and embeds the summary.
+    Sets overallScore from summary.averageEngagement.
 
     Args:
         session_id: Session UUID.
-        ended_at: ISO 8601 UTC timestamp string.
+        ended_at: ISO 8601 UTC timestamp string (unused, kept for compatibility).
         summary: Dict conforming to session-summary.v1 schema.
     """
+    _ = ended_at
     db = get_db()
     db.collection("sessions").document(session_id).update({
-        "endedAt": ended_at,
-        "status": "completed",
-        "summary": summary,
+        "overallScore": float(summary.get("averageEngagement", 0)),
     })
     logger.info("Session completed: sessions/%s", session_id)
 
 
-def emit_tick(session_id: str, payload: dict) -> str:
+def emit_tick(session_id: str, payload: dict, time_since_start: int) -> str:
     """Write a metric tick document to Firestore.
 
     Args:
         session_id: Active session UUID.
-        payload: Dict conforming to metric-tick.v1 schema.
+        payload: Dict conforming to metric-tick.v1 schema (engagementScore is used).
+        time_since_start: Seconds elapsed since session start.
 
     Returns:
         The auto-generated document ID.
     """
     db = get_db()
-    doc_ref = db.collection("sessions").document(session_id).collection("ticks").add(payload)
+    live_data = {
+        "timeSinceStart": int(time_since_start),
+        "engagementScore": int(payload["engagementScore"]),
+    }
+    doc_ref = db.collection("sessions").document(session_id).collection("liveData").add(live_data)
     doc_id = doc_ref[1].id
-    logger.info("Tick emitted: sessions/%s/ticks/%s", session_id, doc_id)
+    logger.info("Tick emitted: sessions/%s/liveData/%s", session_id, doc_id)
     return doc_id
 
 
@@ -114,9 +119,7 @@ def emit_summary(session_id: str, summary: dict) -> None:
     """
     db = get_db()
     db.collection("sessions").document(session_id).update({
-        "summary": summary,
-        "status": "completed",
-        "endedAt": summary.get("endedAt"),
+        "overallScore": float(summary.get("averageEngagement", 0)),
     })
     logger.info("Session summary written: sessions/%s", session_id)
 

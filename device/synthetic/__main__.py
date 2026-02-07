@@ -80,13 +80,17 @@ def main() -> None:
             output = {
                 "session": {
                     "sessionId": session_id,
-                    "deviceId": args.device_id,
-                    "startedAt": summary["startedAt"],
-                    "endedAt": summary["endedAt"],
-                    "status": "completed",
-                    "summary": summary,
+                    "title": f"Session {session_id[:8]} ({args.device_id})",
+                    "overallScore": summary["averageEngagement"],
+                    "comments": [],
                 },
-                "ticks": ticks,
+                "liveData": [
+                    {
+                        "timeSinceStart": int((datetime.fromisoformat(tick["timestamp"]) - datetime.fromisoformat(summary["startedAt"])).total_seconds()),
+                        "engagementScore": tick["engagementScore"],
+                    }
+                    for tick in ticks
+                ],
             }
             print(json.dumps(output, indent=2))
             print()
@@ -100,7 +104,13 @@ def main() -> None:
 
             # Write all tick documents
             for tick in ticks:
-                emitter.emit_tick(session_id, tick)
+                time_since_start = int(
+                    (
+                        datetime.fromisoformat(tick["timestamp"])
+                        - datetime.fromisoformat(summary["startedAt"])
+                    ).total_seconds()
+                )
+                emitter.emit_tick(session_id, tick, time_since_start)
 
             # Complete session with summary
             emitter.complete_session(

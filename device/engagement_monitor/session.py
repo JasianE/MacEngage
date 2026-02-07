@@ -130,7 +130,7 @@ class SessionManager:
             duration_seconds=duration_seconds,
             average_engagement=average_engagement,
             tick_count=tick_count,
-            timeline_ref=f"sessions/{session.session_id}/ticks",
+            timeline_ref=f"sessions/{session.session_id}/liveData",
         )
 
         logger.info(

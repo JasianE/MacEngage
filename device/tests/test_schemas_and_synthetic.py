@@ -28,7 +28,7 @@ def test_tick_and_summary_payloads_conform_to_schema():
         1,
         85.0,
         1,
-        f"sessions/{sid}/ticks",
+        f"sessions/{sid}/liveData",
     )
 
     jsonschema.validate(tick, metric_schema)

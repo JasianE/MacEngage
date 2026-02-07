@@ -89,15 +89,15 @@ pip install https://github.com/feranick/TFlite-builds/releases/download/v2.17.1/
 |---|---|
 | SDK | `firebase-admin` (v7.x, pure Python, ARM64 compatible) |
 | Auth | Service account JSON key (`GOOGLE_APPLICATION_CREDENTIALS` env var) |
-| Write pattern | `db.collection("sessions/{sid}/ticks").add(payload)` |
+| Write pattern | `db.collection("sessions/{sid}/liveData").add({timeSinceStart, engagementScore})` |
 | Timestamp | `firestore.SERVER_TIMESTAMP` for consistent ordering |
 | Dashboard reads | `onSnapshot` listener with timestamp range queries |
 | Cost at 1 write/5s | ~17K writes/day — well within Firestore free tier (50K/day) |
 
 **Firestore Collection Structure**:
 ```
-/sessions/{sessionId}                  ← session metadata (device, start, end, summary)
-/sessions/{sessionId}/ticks/{auto_id}  ← one doc per metric tick
+/sessions/{sessionId}                     ← {title, overallScore, comments}
+/sessions/{sessionId}/liveData/{auto_id}  ← {timeSinceStart, engagementScore}
 ```
 
 **Install Notes**:

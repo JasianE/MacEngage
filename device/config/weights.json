@@ -1,0 +1,12 @@
+{
+  "raising_hand": 100,
+  "writing_notes": 80,
+  "looking_at_board": 75,
+  "on_phone": 0,
+  "head_down": 0,
+  "talking_to_group": 15,
+  "hands_on_head": 30,
+  "looking_away_long": 20,
+  "confidenceThreshold": 0.6,
+  "tickIntervalSeconds": 5
+}

@@ -31,7 +31,20 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with Live Student Engagement Monitor Constitution (v1.0.0):
+
+- **Privacy-First**: Does this feature avoid identifying individuals, tracking per-person data, exposing individual scores, or storing/transmitting raw media?
+- **Edge-First**: Does all video processing occur on-device? Are only aggregate metrics transmitted?
+- **Demo-Safe**: Does this work in generic environments without room-specific configuration? Is calibration <2 minutes?
+- **Configurable Scoring**: Are behavior weights defined in external config (JSON/YAML), not hardcoded?
+- **Clear Contracts**: Are JSON payloads versioned and schema-documented?
+- **Simplicity**: Is this the simplest implementation that proves the concept? Does it avoid unnecessary complexity?
+- **Transparency**: Is the scoring logic documented, debuggable, and auditable?
+- **Non-Goals**: Does this avoid streaming/recording media, individual tracking, identification, or attendance logging?
+
+**Status**: [ ] PASS / [ ] NEEDS REVIEW / [ ] BLOCKED
+
+*If BLOCKED: Document violation and justification or plan to revise feature.*
 
 ## Project Structure
 

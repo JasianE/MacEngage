@@ -1,0 +1,5 @@
+tflite-runtime>=2.14
+firebase-admin>=7.0
+numpy<2
+Pillow
+jsonschema

@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://macengage.local/schemas/weight-config.v1.schema.json",
+  "title": "WeightConfiguration",
+  "description": "Configurable behavior weights and scoring parameters. Loaded from config/weights.json on device.",
+  "type": "object",
+  "required": [
+    "raising_hand",
+    "writing_notes",
+    "looking_at_board",
+    "on_phone",
+    "head_down",
+    "talking_to_group",
+    "hands_on_head",
+    "looking_away_long",
+    "confidenceThreshold",
+    "tickIntervalSeconds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "raising_hand": {
+      "type": "integer",
+      "description": "Weight for raising_hand behavior. Default: 100",
+      "default": 100
+    },
+    "writing_notes": {
+      "type": "integer",
+      "description": "Weight for writing_notes behavior. Default: 80",
+      "default": 80
+    },
+    "looking_at_board": {
+      "type": "integer",
+      "description": "Weight for looking_at_board behavior. Default: 75",
+      "default": 75
+    },
+    "on_phone": {
+      "type": "integer",
+      "description": "Weight for on_phone behavior. Default: 0",
+      "default": 0
+    },
+    "head_down": {
+      "type": "integer",
+      "description": "Weight for head_down behavior. Default: 0",
+      "default": 0
+    },
+    "talking_to_group": {
+      "type": "integer",
+      "description": "Weight for talking_to_group behavior. Default: 15",
+      "default": 15
+    },
+    "hands_on_head": {
+      "type": "integer",
+      "description": "Weight for hands_on_head behavior. Default: 30",
+      "default": 30
+    },
+    "looking_away_long": {
+      "type": "integer",
+      "description": "Weight for looking_away_long behavior. Default: 20",
+      "default": 20
+    },
+    "confidenceThreshold": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 1,
+      "description": "Minimum confidence score to include a detection. Default: 0.6",
+      "default": 0.6
+    },
+    "tickIntervalSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 60,
+      "description": "Seconds between metric tick emissions. Default: 5",
+      "default": 5
+    }
+  }
+}

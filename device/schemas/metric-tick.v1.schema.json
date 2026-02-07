@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://macengage.local/schemas/metric-tick.v1.schema.json",
+  "title": "MetricTick",
+  "description": "A single point-in-time aggregate observation emitted each tick during an active session.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "deviceId",
+    "sessionId",
+    "timestamp",
+    "engagementScore",
+    "behaviorsSummary",
+    "peopleDetected"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this payload schema.",
+      "examples": ["1.0.0"]
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier of the device that produced this tick."
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the session this tick belongs to."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of this observation."
+    },
+    "engagementScore": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Weighted aggregate engagement score for this tick, clamped to [0, 100]."
+    },
+    "peopleDetected": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of people detected in the frame for this tick."
+    },
+    "behaviorsSummary": {
+      "$ref": "#/$defs/BehaviorsSummary"
+    }
+  },
+  "$defs": {
+    "BehaviorsSummary": {
+      "type": "object",
+      "description": "Aggregate count of each defined behavior detected across the group.",
+      "required": [
+        "raising_hand",
+        "writing_notes",
+        "looking_at_board",
+        "on_phone",
+        "head_down",
+        "talking_to_group",
+        "hands_on_head",
+        "looking_away_long"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "raising_hand": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected raising hand."
+        },
+        "writing_notes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected writing notes."
+        },
+        "looking_at_board": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected looking at board."
+        },
+        "on_phone": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected on phone."
+        },
+        "head_down": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected with head down."
+        },
+        "talking_to_group": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected talking to group."
+        },
+        "hands_on_head": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected with hands on head."
+        },
+        "looking_away_long": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of people detected looking away."
+        }
+      }
+    }
+  }
+}

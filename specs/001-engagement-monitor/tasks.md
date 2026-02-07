@@ -15,12 +15,12 @@
 
 **Purpose**: Create the `device/` project skeleton, install dependencies, and establish the package structure
 
-- [ ] T001 Create project directory structure per plan.md layout under `device/`
-- [ ] T002 Create `device/requirements.txt` with pinned dependencies: `tflite-runtime>=2.14`, `firebase-admin>=7.0`, `numpy<2`, `Pillow`, `jsonschema`
-- [ ] T003 [P] Create `device/engagement_monitor/__init__.py` with package metadata (version, schema version constant `SCHEMA_VERSION = "1.0.0"`)
-- [ ] T004 [P] Create `device/synthetic/__init__.py` as empty package init
-- [ ] T005 [P] Create `device/.gitignore` to exclude `.venv/`, `model/*.tflite`, `config/service-account-key.json`, `__pycache__/`
-- [ ] T006 [P] Copy JSON schema files from `specs/001-engagement-monitor/contracts/` to `device/schemas/` for runtime validation
+- [X] T001 Create project directory structure per plan.md layout under `device/`
+- [X] T002 Create `device/requirements.txt` with pinned dependencies: `tflite-runtime>=2.14`, `firebase-admin>=7.0`, `numpy<2`, `Pillow`, `jsonschema`
+- [X] T003 [P] Create `device/engagement_monitor/__init__.py` with package metadata (version, schema version constant `SCHEMA_VERSION = "1.0.0"`)
+- [X] T004 [P] Create `device/synthetic/__init__.py` as empty package init
+- [X] T005 [P] Create `device/.gitignore` to exclude `.venv/`, `model/*.tflite`, `config/service-account-key.json`, `__pycache__/`
+- [X] T006 [P] Copy JSON schema files from `specs/001-engagement-monitor/contracts/` to `device/schemas/` for runtime validation
 
 ---
 
@@ -30,10 +30,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 Create default `device/config/weights.json` with all 8 behavior weights, `confidenceThreshold: 0.6`, and `tickIntervalSeconds: 5` per weight-config.v1 schema
-- [ ] T008 Implement config loader and validator in `device/engagement_monitor/config.py` — load `weights.json`, validate against weight-config.v1 schema using `jsonschema`, fall back to hardcoded defaults if file missing, reject invalid configs with logged error
-- [ ] T009 [P] Implement payload builder in `device/engagement_monitor/schemas.py` — functions `build_tick_payload()` and `build_summary_payload()` that construct dicts conforming to metric-tick.v1 and session-summary.v1 schemas, always include `schemaVersion`
-- [ ] T010 [P] Implement Firestore emitter in `device/engagement_monitor/emitter.py` — initialize `firebase-admin` with service account credentials from `GOOGLE_APPLICATION_CREDENTIALS` env var, provide `emit_tick(payload)` to write to `sessions/{sessionId}/ticks/`, `emit_session(payload)` to write/update `sessions/{sessionId}`, and `emit_summary(sessionId, summary)` to update the session document with the summary
+- [X] T007 Create default `device/config/weights.json` with all 8 behavior weights, `confidenceThreshold: 0.6`, and `tickIntervalSeconds: 5` per weight-config.v1 schema
+- [X] T008 Implement config loader and validator in `device/engagement_monitor/config.py` — load `weights.json`, validate against weight-config.v1 schema using `jsonschema`, fall back to hardcoded defaults if file missing, reject invalid configs with logged error
+- [X] T009 [P] Implement payload builder in `device/engagement_monitor/schemas.py` — functions `build_tick_payload()` and `build_summary_payload()` that construct dicts conforming to metric-tick.v1 and session-summary.v1 schemas, always include `schemaVersion`
+- [X] T010 [P] Implement Firestore emitter in `device/engagement_monitor/emitter.py` — initialize `firebase-admin` with service account credentials from `GOOGLE_APPLICATION_CREDENTIALS` env var, provide `emit_tick(payload)` to write to `sessions/{sessionId}/ticks/`, `emit_session(payload)` to write/update `sessions/{sessionId}`, and `emit_summary(sessionId, summary)` to update the session document with the summary
 
 **Checkpoint**: Config loading, payload construction, and Firestore writes are all operational
 
@@ -47,12 +47,12 @@
 
 ### Implementation
 
-- [ ] T011 [P] [US1] Implement camera capture in `device/engagement_monitor/camera.py` — wrap `picamera2` with `create_preview_configuration` at 640×480 RGB888, provide `capture_frame()` returning numpy RGB array, `start()`/`stop()` lifecycle methods
-- [ ] T012 [P] [US1] Implement TFLite detector in `device/engagement_monitor/detector.py` — load `model/model_unquant.tflite` and `model/labels.txt`, provide `detect(frame) -> list[tuple[str, float]]` that resizes frame to 224×224, normalizes to [-1,1], runs inference, returns list of `(behavior_label, confidence)` pairs above the configured confidence threshold
-- [ ] T013 [US1] Implement engagement scorer in `device/engagement_monitor/scorer.py` — provide `compute_score(detections, weights) -> tuple[int, dict]` that takes a list of `(behavior_label, confidence)` detections and weight config, counts behaviors into a BehaviorsSummary dict, computes mean of per-person weights, clamps to [0,100], returns `(engagementScore, behaviorsSummary)`
-- [ ] T014 [P] [US1] Implement terminal indicator in `device/engagement_monitor/indicator.py` — provide `show(score: int)` that prints a single-line ANSI color-coded bar (green ≥70, yellow ≥40, red <40) with numeric score, using `\r` carriage return for in-place updates
-- [ ] T015 [US1] Implement main tick loop in `device/engagement_monitor/main.py` — on startup: load config (T008), initialize camera (T011), load detector (T012), initialize emitter (T010); provide `run_session(session_id, device_id)` that every `tickIntervalSeconds`: captures frame → detects behaviors → computes score → builds tick payload (T009) → emits to Firestore (T010) → updates indicator (T014); accept keyboard input: `s` to start session, `e` to end session, `q` to quit
-- [ ] T016 [US1] Wire up `device/engagement_monitor/__main__.py` entry point so `python -m engagement_monitor` launches `main.py` with device ID from environment variable `DEVICE_ID` (default: hostname)
+- [X] T011 [P] [US1] Implement camera capture in `device/engagement_monitor/camera.py` — wrap `picamera2` with `create_preview_configuration` at 640×480 RGB888, provide `capture_frame()` returning numpy RGB array, `start()`/`stop()` lifecycle methods
+- [X] T012 [P] [US1] Implement TFLite detector in `device/engagement_monitor/detector.py` — load `model/model_unquant.tflite` and `model/labels.txt`, provide `detect(frame) -> list[tuple[str, float]]` that resizes frame to 224×224, normalizes to [-1,1], runs inference, returns list of `(behavior_label, confidence)` pairs above the configured confidence threshold
+- [X] T013 [US1] Implement engagement scorer in `device/engagement_monitor/scorer.py` — provide `compute_score(detections, weights) -> tuple[int, dict]` that takes a list of `(behavior_label, confidence)` detections and weight config, counts behaviors into a BehaviorsSummary dict, computes mean of per-person weights, clamps to [0,100], returns `(engagementScore, behaviorsSummary)`
+- [X] T014 [P] [US1] Implement terminal indicator in `device/engagement_monitor/indicator.py` — provide `show(score: int)` that prints a single-line ANSI color-coded bar (green ≥70, yellow ≥40, red <40) with numeric score, using `\r` carriage return for in-place updates
+- [X] T015 [US1] Implement main tick loop in `device/engagement_monitor/main.py` — on startup: load config (T008), initialize camera (T011), load detector (T012), initialize emitter (T010); provide `run_session(session_id, device_id)` that every `tickIntervalSeconds`: captures frame → detects behaviors → computes score → builds tick payload (T009) → emits to Firestore (T010) → updates indicator (T014); accept keyboard input: `s` to start session, `e` to end session, `q` to quit
+- [X] T016 [US1] Wire up `device/engagement_monitor/__main__.py` entry point so `python -m engagement_monitor` launches `main.py` with device ID from environment variable `DEVICE_ID` (default: hostname)
 
 **Checkpoint**: A single session can be started, runs tick loop with live camera inference, emits valid payloads to Firestore, and shows terminal indicator. User Story 1 is fully functional and independently testable.
 

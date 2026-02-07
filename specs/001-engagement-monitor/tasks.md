@@ -66,9 +66,9 @@
 
 ### Implementation
 
-- [ ] T017 [US2] Implement session state manager in `device/engagement_monitor/session.py` — provide `SessionManager` class with `start_session(device_id) -> Session` (generates UUID, records start time, sets status active), `end_session() -> SessionSummary` (computes duration, average engagement from accumulated scores, tick count, timeline ref `sessions/{sid}/ticks`), `is_active -> bool`, and guard that raises error if starting while active
-- [ ] T018 [US2] Integrate SessionManager into `device/engagement_monitor/main.py` — replace inline session handling with `SessionManager`, accumulate tick scores for summary computation, on `e` command: call `end_session()`, build summary payload (T009), emit summary to Firestore (T010), print summary to terminal
-- [ ] T019 [US2] Add session document creation on start in `device/engagement_monitor/emitter.py` — on session start, write a session document to `sessions/{sessionId}` with `deviceId`, `startedAt`, `status: "active"`, `endedAt: null`; on session end, update with `endedAt`, `status: "completed"`, and embedded `summary`
+- [X] T017 [US2] Implement session state manager in `device/engagement_monitor/session.py` — provide `SessionManager` class with `start_session(device_id) -> Session` (generates UUID, records start time, sets status active), `end_session() -> SessionSummary` (computes duration, average engagement from accumulated scores, tick count, timeline ref `sessions/{sid}/ticks`), `is_active -> bool`, and guard that raises error if starting while active
+- [X] T018 [US2] Integrate SessionManager into `device/engagement_monitor/main.py` — replace inline session handling with `SessionManager`, accumulate tick scores for summary computation, on `e` command: call `end_session()`, build summary payload (T009), emit summary to Firestore (T010), print summary to terminal
+- [X] T019 [US2] Add session document creation on start in `device/engagement_monitor/emitter.py` — on session start, write a session document to `sessions/{sessionId}` with `deviceId`, `startedAt`, `status: "active"`, `endedAt: null`; on session end, update with `endedAt`, `status: "completed"`, and embedded `summary`
 
 **Checkpoint**: Sessions have formal start/end, unique IDs, overlap prevention, and a summary written to Firestore. User Stories 1 AND 2 are both independently functional.
 
@@ -82,8 +82,8 @@
 
 ### Implementation
 
-- [ ] T020 [US3] Enhance config validation in `device/engagement_monitor/config.py` — add `reload_config()` method that re-reads `weights.json` from disk, validates against schema, and returns `(config, errors)` tuple; if invalid, return previous valid config and log each validation error with field-level detail
-- [ ] T021 [US3] Integrate config reload at session start in `device/engagement_monitor/main.py` — before each `start_session()`, call `reload_config()` so weight changes take effect on next session without restarting the process; log loaded weights at INFO level
+- [X] T020 [US3] Enhance config validation in `device/engagement_monitor/config.py` — add `reload_config()` method that re-reads `weights.json` from disk, validates against schema, and returns `(config, errors)` tuple; if invalid, return previous valid config and log each validation error with field-level detail
+- [X] T021 [US3] Integrate config reload at session start in `device/engagement_monitor/main.py` — before each `start_session()`, call `reload_config()` so weight changes take effect on next session without restarting the process; log loaded weights at INFO level
 
 **Checkpoint**: Configuration changes apply on next session start. Invalid configs are safely rejected. User Stories 1, 2, AND 3 are all functional.
 

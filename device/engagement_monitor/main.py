@@ -3,21 +3,21 @@
 import logging
 import threading
 import time
-import uuid
 from datetime import datetime, timezone
 
 from engagement_monitor import emitter, indicator
 from engagement_monitor.camera import Camera
-from engagement_monitor.config import load_config
+from engagement_monitor.config import load_config, reload_config
 from engagement_monitor.detector import Detector
 from engagement_monitor.schemas import build_summary_payload, build_tick_payload
 from engagement_monitor.scorer import compute_score
+from engagement_monitor.session import SessionManager
 
 logger = logging.getLogger(__name__)
 
 
 def run_session(
-    session_id: str,
+    session_mgr: SessionManager,
     device_id: str,
     config: dict,
     camera: Camera,
@@ -26,14 +26,14 @@ def run_session(
 ) -> dict:
     """Run a single engagement monitoring session with tick loop.
 
-    Captures frames at the configured tick interval, runs inference,
-    computes engagement scores, emits tick payloads to Firestore,
-    and updates the terminal indicator.
+    Uses SessionManager for lifecycle tracking. Captures frames at the
+    configured tick interval, runs inference, computes engagement scores,
+    emits tick payloads to Firestore, and updates the terminal indicator.
 
     The loop runs until ``stop_event`` is set (e.g. by the 'e' command).
 
     Args:
-        session_id: UUID for this session.
+        session_mgr: SessionManager with an active session.
         device_id: Identifier of this device.
         config: Weight configuration dict.
         camera: Initialized Camera instance.
@@ -43,20 +43,13 @@ def run_session(
     Returns:
         The session summary payload dict.
     """
+    session = session_mgr.active_session
+    session_id = session.session_id
     tick_interval = config.get("tickIntervalSeconds", 5)
     confidence_threshold = config.get("confidenceThreshold", 0.6)
 
-    started_at = datetime.now(timezone.utc)
-    scores: list[int] = []
-    tick_count = 0
-
     # Create session document in Firestore
-    emitter.emit_session(session_id, {
-        "deviceId": device_id,
-        "startedAt": started_at.isoformat(),
-        "status": "active",
-        "endedAt": None,
-    })
+    emitter.create_session(session_id, device_id, session.started_at.isoformat())
 
     logger.info("Session %s started on device %s", session_id, device_id)
     print(f"\n[SESSION STARTED] {session_id}")
@@ -86,40 +79,40 @@ def run_session(
 
         # 5. Emit to Firestore
         emitter.emit_tick(session_id, payload)
-        tick_count += 1
-        scores.append(score)
 
-        # 6. Update terminal indicator
+        # 6. Record tick in session manager
+        session_mgr.record_tick(score)
+
+        # 7. Update terminal indicator
         indicator.show(score)
 
         # Wait for remaining tick interval, but check stop_event frequently
         elapsed = time.monotonic() - tick_start
         sleep_time = max(0, tick_interval - elapsed)
         if sleep_time > 0:
-            # Use stop_event.wait() so we can be interrupted promptly
             stop_event.wait(timeout=sleep_time)
 
-    # Compute and emit session summary
-    ended_at = datetime.now(timezone.utc)
-    duration_seconds = max(1, int((ended_at - started_at).total_seconds()))
-    average_engagement = sum(scores) / len(scores) if scores else 0.0
+    # End session via SessionManager — computes summary stats
+    summary = session_mgr.end_session()
 
+    # Build summary payload
     summary_payload = build_summary_payload(
-        device_id=device_id,
-        session_id=session_id,
-        started_at=started_at,
-        ended_at=ended_at,
-        duration_seconds=duration_seconds,
-        average_engagement=average_engagement,
-        tick_count=tick_count,
-        timeline_ref=f"sessions/{session_id}/ticks",
+        device_id=summary.device_id,
+        session_id=summary.session_id,
+        started_at=summary.started_at,
+        ended_at=summary.ended_at,
+        duration_seconds=summary.duration_seconds,
+        average_engagement=summary.average_engagement,
+        tick_count=summary.tick_count,
+        timeline_ref=summary.timeline_ref,
     )
 
-    emitter.emit_summary(session_id, summary_payload)
+    # Write completion to Firestore
+    emitter.complete_session(session_id, summary.ended_at.isoformat(), summary_payload)
 
     print(f"\n\n[SESSION ENDED] {session_id}")
-    print(f"  Duration: {duration_seconds}s | Ticks: {tick_count}")
-    print(f"  Average Engagement: {average_engagement:.1f}/100")
+    print(f"  Duration: {summary.duration_seconds}s | Ticks: {summary.tick_count}")
+    print(f"  Average Engagement: {summary.average_engagement:.1f}/100")
 
     return summary_payload
 
@@ -141,6 +134,9 @@ def main(device_id: str) -> None:
     # Load detector
     detector = Detector()
     detector.load()
+
+    # Session manager — enforces single-session-at-a-time
+    session_mgr = SessionManager()
 
     print("=" * 60)
     print("  Live Group Engagement Monitor")
@@ -164,14 +160,30 @@ def main(device_id: str) -> None:
                     print("[WARN] Session already active. Press 'e' to end it first.")
                     continue
 
-                # Reload config for each new session
-                config = load_config()
-                stop_event.clear()
-                session_id = str(uuid.uuid4())
+                # Reload config for each new session (T021)
+                config, errors = reload_config()
+                if errors:
+                    print(f"[WARN] Config errors (using defaults): {errors[0]}")
+                else:
+                    logger.info("Config reloaded for new session")
+                    weights_info = {k: config[k] for k in [
+                        "raising_hand", "writing_notes", "looking_at_board",
+                        "on_phone", "head_down", "talking_to_group",
+                        "hands_on_head", "looking_away_long",
+                    ]}
+                    logger.info("Active weights: %s", weights_info)
 
+                # Start session via manager (enforces no overlap)
+                try:
+                    session_mgr.start_session(device_id)
+                except RuntimeError as exc:
+                    print(f"[ERROR] {exc}")
+                    continue
+
+                stop_event.clear()
                 session_thread = threading.Thread(
                     target=run_session,
-                    args=(session_id, device_id, config, camera, detector, stop_event),
+                    args=(session_mgr, device_id, config, camera, detector, stop_event),
                     daemon=True,
                 )
                 session_thread.start()

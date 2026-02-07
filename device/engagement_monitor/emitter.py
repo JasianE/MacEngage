@@ -2,6 +2,7 @@
 
 import logging
 import os
+from datetime import datetime, timezone
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -34,6 +35,45 @@ def get_db():
     """Return the Firestore client, initializing if needed."""
     _ensure_initialized()
     return _db
+
+
+def create_session(session_id: str, device_id: str, started_at: str) -> None:
+    """Create a session document in Firestore on session start.
+
+    Writes the initial session document with status 'active' and endedAt null.
+
+    Args:
+        session_id: Session UUID.
+        device_id: Device identifier.
+        started_at: ISO 8601 UTC timestamp string.
+    """
+    db = get_db()
+    db.collection("sessions").document(session_id).set({
+        "deviceId": device_id,
+        "startedAt": started_at,
+        "status": "active",
+        "endedAt": None,
+    })
+    logger.info("Session created: sessions/%s (device=%s)", session_id, device_id)
+
+
+def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
+    """Update a session document on session end.
+
+    Sets endedAt, status to 'completed', and embeds the summary.
+
+    Args:
+        session_id: Session UUID.
+        ended_at: ISO 8601 UTC timestamp string.
+        summary: Dict conforming to session-summary.v1 schema.
+    """
+    db = get_db()
+    db.collection("sessions").document(session_id).update({
+        "endedAt": ended_at,
+        "status": "completed",
+        "summary": summary,
+    })
+    logger.info("Session completed: sessions/%s", session_id)
 
 
 def emit_tick(session_id: str, payload: dict) -> str:

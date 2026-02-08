@@ -244,6 +244,38 @@ app.get("/live", async (req, res) => {
   }
 });
 
+app.get("/live/current", async (req, res) => {
+  try {
+    const db = getDb();
+    const { deviceId } = req.query;
+
+    if (!deviceId) {
+      return fail(res, "deviceId query param is required", 400);
+    }
+
+    const deviceDoc = await db.collection("devices").doc(String(deviceId)).get();
+    const currentSessionId = deviceDoc.exists ? deviceDoc.data()?.currentSessionId : null;
+
+    if (!currentSessionId) {
+      return ok(res, { deviceId: String(deviceId), sessionId: null, count: 0, liveData: [] });
+    }
+
+    let query = db.collection("sessions").doc(String(currentSessionId)).collection("liveData").orderBy("timeSinceStart", "asc");
+    let snap;
+    try {
+      snap = await query.get();
+    } catch (_e) {
+      query = db.collection("sessions").doc(String(currentSessionId)).collection("liveData");
+      snap = await query.get();
+    }
+
+    const liveData = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return ok(res, { deviceId: String(deviceId), sessionId: String(currentSessionId), count: liveData.length, liveData });
+  } catch (error) {
+    return fail(res, "Failed to fetch current session live data", 500, safeError(error));
+  }
+});
+
 app.patch("/sessionInfo/:sessionId", async (req, res) => {
   try {
     const db = getDb();

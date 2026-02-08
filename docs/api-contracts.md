@@ -1,0 +1,269 @@
+# API Contracts
+
+Base URL after deploy:
+
+`https://<region>-<project-id>.cloudfunctions.net/api`
+
+All responses use one envelope:
+
+- Success: `{ "ok": true, "data": ... }`
+- Error: `{ "ok": false, "message": "...", "details": "..." }`
+
+## GET /health
+
+Health check.
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "service": "api",
+    "status": "up"
+  }
+}
+```
+
+## POST /start
+
+Queue a remote start command for a device.
+
+### Request body
+
+```json
+{
+  "deviceId": "pi-01"
+}
+```
+
+### Response 201
+
+```json
+{
+  "ok": true,
+  "data": {
+    "commandId": "abc123",
+    "type": "start_session",
+    "status": "pending"
+  }
+}
+```
+
+## POST /end
+
+Queue a remote end command for a device.
+
+### Request body
+
+```json
+{
+  "deviceId": "pi-01"
+}
+```
+
+### Response 201
+
+```json
+{
+  "ok": true,
+  "data": {
+    "commandId": "abc123",
+    "type": "end_session",
+    "status": "pending"
+  }
+}
+```
+
+## POST /create-user
+## POST /sign-up
+## POST /signup
+
+Create a Firebase Auth user (all three routes are aliases).
+
+### Request body
+
+```json
+{
+  "email": "user@example.com",
+  "password": "secret",
+  "displayName": "User Name"
+}
+```
+
+### Response 201
+
+```json
+{
+  "ok": true,
+  "data": {
+    "uid": "uid123",
+    "email": "user@example.com",
+    "displayName": "User Name",
+    "profileSynced": true
+  }
+}
+```
+
+## POST /login
+
+Email/password login via Firebase Identity Toolkit.
+
+### Request body
+
+```json
+{
+  "email": "user@example.com",
+  "password": "secret"
+}
+```
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "uid": "uid123",
+    "email": "user@example.com",
+    "idToken": "...",
+    "refreshToken": "...",
+    "expiresIn": "3600"
+  }
+}
+```
+
+## GET /getAllSessionInfo/:userId
+
+Fetch sessions by `userId` field.
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "userId": "uid123",
+    "count": 2,
+    "sessions": [
+      { "id": "sessionA" },
+      { "id": "sessionB" }
+    ]
+  }
+}
+```
+
+## GET /sessionInfo/:sessionId
+
+Fetch one session document.
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "sessionA",
+    "title": "Session ...",
+    "overallScore": 75,
+    "comments": []
+  }
+}
+```
+
+### Response 404
+
+`{ "ok": false, "message": "Session not found" }`
+
+## PATCH /sessionInfo/:sessionId
+
+Patch `description` and/or `comments`.
+
+### Request body
+
+```json
+{
+  "description": "Session notes",
+  "comments": ["Good pacing", "Need more interaction"]
+}
+```
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "sessionA"
+  }
+}
+```
+
+## GET /live
+
+Fetch live data for a known session.
+
+### Query params
+
+- `sessionId` (required)
+- `limit` (optional, default 200, clamped to 1..1000)
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "sessionId": "sessionA",
+    "count": 3,
+    "liveData": [
+      { "id": "tick1", "timeSinceStart": 5, "engagementScore": 74 }
+    ]
+  }
+}
+```
+
+## GET /live/current
+
+Fetch live data for the device's current active session.
+
+### Query params
+
+- `deviceId` (required)
+
+> Note: this endpoint does **not** accept `limit`.
+
+### Behavior
+
+- Reads `devices/{deviceId}.currentSessionId`.
+- If no active session pointer exists, returns empty `liveData` with `sessionId: null`.
+
+### Response 200 (active session)
+
+```json
+{
+  "ok": true,
+  "data": {
+    "deviceId": "pi-01",
+    "sessionId": "sessionA",
+    "count": 3,
+    "liveData": [
+      { "id": "tick1", "timeSinceStart": 5, "engagementScore": 74 }
+    ]
+  }
+}
+```
+
+### Response 200 (no active session)
+
+```json
+{
+  "ok": true,
+  "data": {
+    "deviceId": "pi-01",
+    "sessionId": null,
+    "count": 0,
+    "liveData": []
+  }
+}
+```

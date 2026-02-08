@@ -15,7 +15,6 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-        /*
       const res = await fetch("http://localhost:5000/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -26,7 +25,6 @@ export default function SignUp() {
       setLoading(false);
 
       if (!res.ok) throw new Error(data.message || "Signup failed");
-      */
       
       // Redirect to dashboard
       navigate("/dashboard");

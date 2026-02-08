@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE, linkDeviceOwner } from "../utils/postRequests";
+import engagementLogoText from "../assets/engagement_logo_text.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -57,13 +58,12 @@ export default function LoginPage() {
         className="w-full max-w-[400px] bg-white border border-gray-100 rounded-2xl shadow-xl shadow-gray-300/40 px-8 py-8"
       >
         <div className="flex flex-col items-center pt-1 pb-2">
-          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-4 shadow-sm">
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M19 4c-6.8 1-11.5 5.7-12.5 12.5C5.9 12.4 8.7 8.8 13 7.3c-1.5 2.1-2.2 4.4-2.3 7.2 4.8-.1 8.2-3.8 8.3-10.5Z"
-                fill="currentColor"
-              />
-            </svg>
+          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-4 shadow-sm overflow-hidden">
+            <img
+              src={engagementLogoText}
+              alt="Engagement logo"
+              className="h-8 w-auto object-contain"
+            />
           </div>
           <h1 className="text-[38px] leading-none font-extrabold tracking-tight text-slate-900 uppercase">
             ENGAGEMINT

@@ -1,35 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-function LogoMark({ className = "" }) {
-  return (
-    <div
-      className={`rounded-2xl bg-[#159A93] shadow-[0_12px_30px_rgba(21,154,147,0.30)] ${className}`}
-    >
-      <svg
-        viewBox="0 0 32 32"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-full w-full text-white"
-      >
-        <path
-          d="M7.5 23.5V18.7M12.5 23.5V14.8M17.5 23.5V10.9M22.5 23.5V16.5M7 24.5H25"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M8.8 14.5L13 10.8L16.7 13.6L22.8 7.8"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
+import engagementLogoText from "../assets/engagement_logo_text.png";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -54,7 +25,11 @@ export default function Landing() {
             className="flex items-center gap-3"
             aria-label="Go to landing page"
           >
-            <LogoMark className="h-10 w-10 p-2 rounded-xl" />
+            <img
+              src={engagementLogoText}
+              alt="Engagement logo"
+              className="h-10 w-10 rounded-xl object-contain"
+            />
             <span className="text-xl font-extrabold tracking-[-0.04em] leading-none md:text-2xl">
               ENGAGE<span className="text-[#159A93]">MINT</span>
             </span>
@@ -84,7 +59,11 @@ export default function Landing() {
         <div className="pointer-events-none absolute bottom-[-15%] right-[-12%] h-[46%] w-[46%] rounded-full bg-[#159A93]/10 blur-3xl dark:bg-[#159A93]/20" />
 
         <section className="relative z-10 flex w-full max-w-[540px] flex-col items-center text-center">
-          <LogoMark className="mb-7 h-16 w-16 p-3.5" />
+          <img
+            src={engagementLogoText}
+            alt="Engagement logo"
+            className="mb-7 h-16 w-16 rounded-2xl object-contain"
+          />
 
           <h1 className="text-5xl font-black tracking-[-0.06em] leading-[0.94] text-[#0b1534] dark:text-white md:text-6xl">
             ENGAGE<span className="text-[#159A93]">MINT</span>

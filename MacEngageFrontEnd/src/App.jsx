@@ -20,7 +20,6 @@ function App() {
       <Route path ="/signup" element={<SignUp />} />
       <Route path="/session/:sessionId" element={<SessionPage />} />
       <Route path="*" element={<Landing />} />
-
     </Routes>
     </>
   );

@@ -13,9 +13,19 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState([]);
 
   useEffect(() => {
-    // TODO: Replace with API call to fetch sessions
-    setSessions(mockSessions);
-  }, []);
+    const fetchData = async () => {
+      try {
+        const data = await fetch("https://jsonplaceholder.typicode.com/todos/1"); // http://192.82.1
+        const process = await data.json();
+        //setSessions(process);
+        setSessions(mockSessions);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      }
+    };
+
+    fetchData();
+  }, []); // empty dependency array = runs once on mount
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { LineChart } from "@mui/x-charts/LineChart";
 import ScoreDisplay from "../components/ScoreDisplay";
 import StatTracker from "../components/StatTracker";
+import { writeComment } from "../utils/postRequests";
 
 function SessionPage() {
   const { sessionId } = useParams();
@@ -12,6 +13,17 @@ function SessionPage() {
 
   // Mock fetching session
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetch("https://jsonplaceholder.typicode.com/todos/1"); // http://192.82/session/2302-123
+        const process = await data.json();
+        //setSessions(process);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      }
+    };
+
+    fetchData();
     const mockSessions = {
       "abc123": {
         title: "Math Lesson 3",
@@ -40,8 +52,13 @@ function SessionPage() {
 
   if (!session) return <p className="p-8 text-gray-300">Loading session...</p>;
 
-  function handleAddComment() {
+  async function handleAddComment() {
     if (!newComment.trim()) return;
+    try{
+      //writeComment(newComment);
+    } catch(err){
+      console.log(err);
+    }
     const updatedComments = [...session.comments, newComment];
     setSession((prev) => ({ ...prev, comments: updatedComments }));
     setNewComment("");
@@ -66,7 +83,7 @@ function SessionPage() {
 
       {/* Live Data Chart */}
       <div className="mb-8 bg-slate-800 p-4 rounded shadow-lg">
-        <StatTracker />
+        <StatTracker engagementArray = {chartY} timeArray = {chartX}/>
       </div>
 
       {/* Comments Section */}

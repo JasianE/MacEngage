@@ -1,29 +1,42 @@
 import { LineChart } from "@mui/x-charts/LineChart";
 
-function StatTracker() {
+function StatTracker({ engagementArray, timeArray, color = "white" }) {
   return (
     <LineChart
       xAxis={[
         {
-          data: [2, 4, 6, 8, 10],
-          style: { color: "white" }, // x-axis labels white
+          data: timeArray,
+          label: "Time",
+          labelStyle: {
+            fill: color,
+            fontWeight: "bold",
+          },
         },
       ]}
       yAxis={[
         {
-          style: { color: "white" }, // y-axis labels white
+          label: "Engagement Score",
+          labelStyle: {
+            fill: color,
+            fontWeight: "bold",
+          },
         },
       ]}
       series={[
         {
-          data: [2, 5.5, 2, 8.5, 80, 5],
-          color: "#3b82f6", // line color (blue)
+          data: engagementArray,
+          color: "#3b82f6",
+          showMark: false, 
         },
       ]}
       height={300}
       sx={{
         "& .MuiChartsAxis-root text": {
-          fill: "white", // ensure axis labels are white
+          fill: color,
+        },
+        "& .MuiChartsAxis-label": {
+          fill: color,
+          fontWeight: "bold",
         },
       }}
     />

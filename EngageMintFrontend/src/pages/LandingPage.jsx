@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function LogoMark({ className = "" }) {
@@ -33,28 +33,16 @@ function LogoMark({ className = "" }) {
 
 export default function Landing() {
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(document.documentElement.classList.contains("dark"));
 
   useEffect(() => {
+    document.documentElement.classList.remove("dark");
+
     const savedUUID = localStorage.getItem("userUUID");
 
     if (savedUUID && savedUUID !== "undefined") {
       navigate("/dashboard");
     }
   }, [navigate]);
-
-  const toggleDarkMode = () => {
-    const html = document.documentElement;
-    const nextIsDark = !html.classList.contains("dark");
-
-    if (nextIsDark) {
-      html.classList.add("dark");
-    } else {
-      html.classList.remove("dark");
-    }
-
-    setIsDark(nextIsDark);
-  };
 
   return (
     <div className="min-h-screen bg-[#EEF2F4] text-[#0f172a] transition-colors duration-300 dark:bg-[#0f172a] dark:text-slate-100">
@@ -117,23 +105,6 @@ export default function Landing() {
             Simplified Engagement Tracking for Educators
           </p>
         </section>
-
-        <button
-          type="button"
-          onClick={toggleDarkMode}
-          aria-label="Toggle dark mode"
-          className="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_10px_22px_rgba(15,23,42,0.15)] transition-all hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-        >
-          {isDark ? (
-            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden="true">
-              <path d="M21.75 15.5a9.75 9.75 0 1 1-13.2-13.2 1 1 0 0 1 1.28 1.28 7.75 7.75 0 1 0 10.64 10.64 1 1 0 0 1 1.28 1.28Z" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden="true">
-              <path d="M12 18a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1Zm6.36-2.95 1.42 1.41a1 1 0 1 1-1.42 1.42l-1.41-1.42a1 1 0 1 1 1.41-1.41ZM6.64 15.05a1 1 0 0 1 0 1.41l-1.42 1.42a1 1 0 0 1-1.41-1.42l1.41-1.41a1 1 0 0 1 1.42 0ZM12 5a7 7 0 1 1 0 14 7 7 0 0 1 0-14Zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm9 4a1 1 0 1 1 0 2h-2a1 1 0 1 1 0-2h2ZM5 11a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2h2Zm13.36-5.95a1 1 0 0 1 1.41 0 1 1 0 0 1 0 1.42l-1.41 1.41a1 1 0 1 1-1.42-1.41l1.42-1.42ZM5.22 4.99a1 1 0 0 1 1.41 0l1.42 1.42a1 1 0 0 1-1.42 1.41L5.22 6.4a1 1 0 0 1 0-1.41ZM12 1a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V2a1 1 0 0 1 1-1Z" />
-            </svg>
-          )}
-        </button>
       </main>
     </div>
   );

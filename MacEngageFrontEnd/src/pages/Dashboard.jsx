@@ -121,7 +121,7 @@ export default function Dashboard() {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-        <div className="space-y-4 max-w-4xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {sessions.length === 0 ? (
             <p className="text-slate-500 dark:text-slate-400">
               No previous sessions found.
@@ -136,25 +136,15 @@ export default function Dashboard() {
               <div
                 key={session.id}
                 onClick={() => navigate(`/session/${session.id}`)}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm px-6 py-5 cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-500 transition-all"
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow p-4 cursor-pointer hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-500 transition-all"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
-                      <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 text-sm font-semibold tracking-wide">
-                        {session.courseCode || session.code || "SESSION"}
-                      </span>
-                      <span className="text-sm">•</span>
-                      <span className="text-sm font-semibold text-slate-500 dark:text-slate-300 truncate">
-                        {session.room || session.location || "Room unavailable"}
-                      </span>
-                    </div>
-
-                    <h3 className="font-extrabold text-3xl text-slate-900 dark:text-white leading-tight">
+                    <h3 className="font-bold text-xl text-slate-900 dark:text-white leading-tight">
                       {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
                     </h3>
 
-                    <p className="text-xl text-slate-400 dark:text-slate-400 mt-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                       {formatSessionDate(
                         session.startedAt ||
                           session.createdAt ||
@@ -165,11 +155,11 @@ export default function Dashboard() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-end shrink-0 pl-3">
-                    <span className="text-5xl font-extrabold text-emerald-500 dark:text-emerald-400 leading-none">
+                  <div className="flex flex-col items-end justify-center shrink-0">
+                    <span className="text-2xl font-extrabold text-emerald-500 dark:text-emerald-400 leading-none">
                       {score == null ? "--" : `${score}%`}
                     </span>
-                    <div className="mt-5 flex items-end gap-1.5">
+                    <div className="mt-3 flex items-end gap-1">
                       {scoreBars.map((height, barIndex) => {
                         const isActive = barIndex < activeBars;
                         const adjustedHeight = scoreBars[(barIndex + index) % scoreBars.length];
@@ -177,7 +167,7 @@ export default function Dashboard() {
                         return (
                           <span
                             key={`${session.id || index}-bar-${barIndex}`}
-                            className={`w-3 rounded-full transition-opacity ${
+                            className={`w-2.5 rounded-full transition-opacity ${
                               isActive
                                 ? "bg-emerald-500 dark:bg-emerald-400"
                                 : "bg-emerald-200 dark:bg-emerald-900/60"

@@ -147,7 +147,8 @@ export default function Dashboard() {
 
           <button
             type="button"
-            className="flex w-full items-center gap-3 px-6 py-4 text-sm font-medium text-gray-500"
+            onClick={() => navigate("/analysis")}
+            className="flex w-full items-center gap-3 px-6 py-4 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
           >
             <span className="text-base">◫</span>
             Analysis

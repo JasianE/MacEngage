@@ -138,6 +138,7 @@ function SessionPage() {
           <nav className="flex-1 pt-2">
             <button
               type="button"
+              onClick={() => navigate("/dashboard")}
               className="flex w-full items-center gap-3 border-r-4 border-emerald-500 bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-600"
             >
               <span className="text-base">▣</span>
@@ -146,7 +147,8 @@ function SessionPage() {
 
             <button
               type="button"
-              className="flex w-full items-center gap-3 px-6 py-4 text-sm font-medium text-gray-500"
+              onClick={() => navigate("/analysis")}
+              className="flex w-full items-center gap-3 px-6 py-4 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
             >
               <span className="text-base">◫</span>
               Analysis

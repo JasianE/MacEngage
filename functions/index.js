@@ -37,6 +37,25 @@ function safeError(error) {
   return error?.message || "Unexpected error";
 }
 
+function mapAuthCreateUserError(error) {
+  const code = error?.code || "";
+  const message = error?.message || "Failed to create user";
+
+  if (code === "auth/email-already-exists") {
+    return { status: 409, message: "An account with this email already exists" };
+  }
+
+  if (code === "auth/invalid-email") {
+    return { status: 400, message: "Invalid email address" };
+  }
+
+  if (code === "auth/invalid-password" || code === "auth/weak-password") {
+    return { status: 400, message: "Password is invalid or too weak" };
+  }
+
+  return { status: 500, message };
+}
+
 async function createUser(req, res) {
   try {
     const db = getDb();
@@ -47,15 +66,24 @@ async function createUser(req, res) {
 
     const user = await admin.auth().createUser({ email, password, displayName });
 
-    await db.collection("users").doc(user.uid).set(
-      {
+    let profileSynced = true;
+    try {
+      await db.collection("users").doc(user.uid).set(
+        {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || null,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } catch (profileError) {
+      profileSynced = false;
+      console.error("[create-user] Auth user created but Firestore profile write failed", {
         uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
+        error: safeError(profileError),
+      });
+    }
 
     return ok(
       res,
@@ -63,11 +91,13 @@ async function createUser(req, res) {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName || null,
+        profileSynced,
       },
       201,
     );
   } catch (error) {
-    return fail(res, "Failed to create user", 500, safeError(error));
+    const mapped = mapAuthCreateUserError(error);
+    return fail(res, mapped.message, mapped.status, safeError(error));
   }
 }
 
@@ -117,6 +147,7 @@ app.post("/end", async (req, res) => {
 
 app.post("/create-user", createUser);
 app.post("/sign-up", createUser);
+app.post("/signup", createUser);
 
 app.post("/login", async (req, res) => {
   try {

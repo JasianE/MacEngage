@@ -32,6 +32,16 @@ Endpoints:
 
 Full request/response contracts are documented in [`docs/api-contracts.md`](docs/api-contracts.md).
 
+## Demo account + historical fake data seeding
+
+For hackathon/demo prep, use the backend seeder to create a demo login and patterned historical sessions:
+
+```bash
+npm --prefix functions run seed:demo -- --reset
+```
+
+Detailed guide and flags are in [`docs/demo-data-seeder.md`](docs/demo-data-seeder.md).
+
 ## Firebase files added
 
 - `functions/index.js` (Express routes)

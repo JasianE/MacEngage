@@ -20,6 +20,8 @@ DEFAULT_CONFIG = {
     "hands_on_head": 30,
     "looking_away_long": 20,
     "confidenceThreshold": 0.6,
+    "useConfidenceInScoring": False,
+    "confidenceImpactStrength": 0.35,
     "tickIntervalSeconds": 0.5,
 }
 

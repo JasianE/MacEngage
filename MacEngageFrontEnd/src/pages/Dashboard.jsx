@@ -35,6 +35,17 @@ function formatSessionDate(rawValue) {
   return "Date unavailable";
 }
 
+function getSessionScore(session) {
+  const rawScore =
+    session?.overallScore ??
+    session?.engagementScore ??
+    session?.averageEngagement ??
+    session?.score;
+
+  if (typeof rawScore !== "number" || Number.isNaN(rawScore)) return null;
+  return Math.max(0, Math.min(100, Math.round(rawScore)));
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
@@ -110,32 +121,77 @@ export default function Dashboard() {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-4 max-w-4xl">
           {sessions.length === 0 ? (
             <p className="text-slate-500 dark:text-slate-400">
               No previous sessions found.
             </p>
           ) : (
-            sessions.map((session) => (
+            sessions.map((session, index) => {
+              const score = getSessionScore(session);
+              const scoreBars = [16, 24, 20, 30, 26];
+              const activeBars = score == null ? 0 : Math.max(1, Math.ceil(score / 20));
+
+              return (
               <div
                 key={session.id}
                 onClick={() => navigate(`/session/${session.id}`)}
-                className="bg-white dark:bg-slate-800 hover:bg-blue-900 border border-slate-200 dark:border-slate-700 rounded shadow p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm px-6 py-5 cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-500 transition-all"
               >
-                <h3 className="font-bold text-slate-900 dark:text-white">
-                  {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {formatSessionDate(
-                    session.startedAt ||
-                      session.createdAt ||
-                      session.date ||
-                      session.seededAt ||
-                      session.endedAt,
-                  )}
-                </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
+                      <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 text-sm font-semibold tracking-wide">
+                        {session.courseCode || session.code || "SESSION"}
+                      </span>
+                      <span className="text-sm">•</span>
+                      <span className="text-sm font-semibold text-slate-500 dark:text-slate-300 truncate">
+                        {session.room || session.location || "Room unavailable"}
+                      </span>
+                    </div>
+
+                    <h3 className="font-extrabold text-3xl text-slate-900 dark:text-white leading-tight">
+                      {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
+                    </h3>
+
+                    <p className="text-xl text-slate-400 dark:text-slate-400 mt-2">
+                      {formatSessionDate(
+                        session.startedAt ||
+                          session.createdAt ||
+                          session.date ||
+                          session.seededAt ||
+                          session.endedAt,
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end shrink-0 pl-3">
+                    <span className="text-5xl font-extrabold text-emerald-500 dark:text-emerald-400 leading-none">
+                      {score == null ? "--" : `${score}%`}
+                    </span>
+                    <div className="mt-5 flex items-end gap-1.5">
+                      {scoreBars.map((height, barIndex) => {
+                        const isActive = barIndex < activeBars;
+                        const adjustedHeight = scoreBars[(barIndex + index) % scoreBars.length];
+
+                        return (
+                          <span
+                            key={`${session.id || index}-bar-${barIndex}`}
+                            className={`w-3 rounded-full transition-opacity ${
+                              isActive
+                                ? "bg-emerald-500 dark:bg-emerald-400"
+                                : "bg-emerald-200 dark:bg-emerald-900/60"
+                            }`}
+                            style={{ height: `${adjustedHeight}px` }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))
+            );
+            })
           )}
         </div>
         )}

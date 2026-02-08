@@ -33,7 +33,8 @@ Queue a remote start command for a device.
 
 ```json
 {
-  "deviceId": "pi-01"
+  "deviceId": "pi-01",
+  "sessionName": "Calculus II"
 }
 ```
 
@@ -45,6 +46,7 @@ Queue a remote start command for a device.
   "data": {
     "commandId": "abc123",
     "type": "start_session",
+    "sessionName": "Calculus II",
     "status": "pending"
   }
 }

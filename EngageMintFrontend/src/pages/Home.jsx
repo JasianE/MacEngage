@@ -1,5 +1,6 @@
 /* Utils + Libs */
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { getLiveData } from "../utils/fetchResponseData.js";
 import { startMachine, endMachine } from "../utils/postRequests.js";
 
@@ -11,10 +12,16 @@ import ScoreDisplay from "../components/ScoreDisplay.jsx";
 import StatTracker from "../components/StatTracker.jsx";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [engagementArray, setEngagementArray] = useState([0]);
   const [timeArray, setTimeArray] = useState([0]);
   const [score, setScore] = useState(0);
   const [selectedRange, setSelectedRange] = useState("30m");
+  const [showStartModal, setShowStartModal] = useState(true);
+  const [sessionName, setSessionName] = useState("");
+  const [startError, setStartError] = useState("");
+  const [isStarting, setIsStarting] = useState(false);
+  const [hasStartedSession, setHasStartedSession] = useState(false);
 
   const RANGE_TO_SECONDS = useRef({
     "5m": 5 * 60,
@@ -22,29 +29,41 @@ export default function Home() {
     "1h": 60 * 60,
   });
 
+  async function handleStartSession() {
+    const trimmedName = sessionName.trim();
+    if (!trimmedName) {
+      setStartError("Class name is required.");
+      return;
+    }
+
+    try {
+      setIsStarting(true);
+      setStartError("");
+      await startMachine(trimmedName);
+      setHasStartedSession(true);
+      setShowStartModal(false);
+    } catch (error) {
+      console.error("Failed to start live session:", error);
+      setStartError(error.message || "Failed to start session.");
+    } finally {
+      setIsStarting(false);
+    }
+  }
+
   useEffect(() => {
-    let active = true;
-
-    const start = async () => {
-      try {
-        await startMachine();
-      } catch (error) {
-        console.error("Failed to start live session:", error);
-      }
-    };
-
-    start();
-
     return () => {
-      if (!active) return;
-      active = false;
+      if (!hasStartedSession) return;
       endMachine().catch((error) => {
         console.error("Failed to end live session on exit:", error);
       });
     };
-  }, []);
+  }, [hasStartedSession]);
 
   useEffect(() => {
+    if (!hasStartedSession) {
+      return undefined;
+    }
+
     const interval = setInterval(async () => {
       try {
         const { data } = await getLiveData();
@@ -83,7 +102,7 @@ export default function Home() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [hasStartedSession]);
 
   const latestTime = timeArray[timeArray.length - 1] || 0;
   const windowSeconds = RANGE_TO_SECONDS.current[selectedRange];
@@ -97,7 +116,7 @@ export default function Home() {
   const displayedEngagementArray = pairedPoints.map((p) => p.y);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-100 text-slate-900 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-100 text-slate-900 overflow-hidden relative">
       <Header />
 
       <main className="flex-1 overflow-y-auto p-6 md:p-8">
@@ -108,7 +127,7 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <p className="text-2xl font-bold text-slate-800">
-                  {score > 0 ? "Active" : "Idle"}
+                  {hasStartedSession ? "Active" : "Idle"}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">Session Status</p>
               </div>
@@ -162,6 +181,69 @@ export default function Home() {
           </section>
         </div>
       </main>
+
+      {showStartModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-[520px] rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden relative">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            <div className="pt-10 px-10 pb-2 flex flex-col items-center text-center">
+              <div className="size-16 rounded-full bg-emerald-100 flex items-center justify-center mb-6 text-emerald-500 text-2xl">
+                🍃
+              </div>
+              <h1 className="text-4xl font-black text-[#0d1b12] mb-2">Start New Session</h1>
+              <p className="text-emerald-700 text-sm max-w-xs leading-relaxed">
+                Enter details below to initialize a new class monitoring environment.
+              </p>
+            </div>
+
+            <div className="p-10 flex flex-col gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-[#0d1b12]" htmlFor="class_name">
+                  Class Name
+                </label>
+                <input
+                  id="class_name"
+                  type="text"
+                  value={sessionName}
+                  onChange={(e) => {
+                    setSessionName(e.target.value);
+                    if (startError) setStartError("");
+                  }}
+                  placeholder="e.g., Calculus II"
+                  className="block w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f8fcf9] text-[#0d1b12] placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
+                />
+                {startError ? <p className="text-xs font-medium text-red-500">{startError}</p> : null}
+              </div>
+            </div>
+
+            <div className="px-10 pb-10 flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={handleStartSession}
+                disabled={isStarting}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-6 rounded-lg transition-colors shadow-lg shadow-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isStarting ? "Starting..." : "▶ Start Monitoring"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard")}
+                className="w-full text-center text-sm font-medium text-gray-500 hover:text-[#0d1b12] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

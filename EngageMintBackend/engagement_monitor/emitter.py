@@ -47,7 +47,13 @@ def get_db():
     return _db
 
 
-def create_session(session_id: str, device_id: str, started_at: str, title: str | None = None) -> None:
+def create_session(
+    session_id: str,
+    device_id: str,
+    started_at: str,
+    title: str | None = None,
+    user_id: str | None = None,
+) -> None:
     """Create a session document in Firestore on session start.
 
     Firebase model (canonical):
@@ -60,10 +66,11 @@ def create_session(session_id: str, device_id: str, started_at: str, title: str 
         title: Optional session title override.
     """
     db = get_db()
-    owner_user_id = None
-    device_doc = db.collection("devices").document(device_id).get()
-    if device_doc.exists:
-        owner_user_id = (device_doc.to_dict() or {}).get("ownerUserId")
+    owner_user_id = str(user_id).strip() if user_id else None
+    if owner_user_id is None:
+        device_doc = db.collection("devices").document(device_id).get()
+        if device_doc.exists:
+            owner_user_id = (device_doc.to_dict() or {}).get("ownerUserId")
 
     db.collection("sessions").document(session_id).set({
         "title": title or f"Session {session_id[:8]} ({device_id}) {started_at[:19]}",

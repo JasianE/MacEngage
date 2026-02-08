@@ -124,7 +124,9 @@ export async function linkDeviceOwner(userId, deviceId = "handwashpi") {
 
 
 
-export async function startMachine(){
+export async function startMachine(userId){
+
+    const resolvedUserId = userId || localStorage.getItem("userUUID") || null;
 
     const response = await fetch(`${API_BASE}/start`, {
 
@@ -136,7 +138,7 @@ export async function startMachine(){
 
         },
 
-        body: JSON.stringify({ "deviceId": "handwashpi" })
+        body: JSON.stringify({ "deviceId": "handwashpi", userId: resolvedUserId })
 
     });
 
@@ -146,7 +148,9 @@ export async function startMachine(){
 
 
 
-export async function endMachine(){
+export async function endMachine(userId){
+
+    const resolvedUserId = userId || localStorage.getItem("userUUID") || null;
 
     const response = await fetch(`${API_BASE}/end`, {
 
@@ -158,7 +162,7 @@ export async function endMachine(){
 
         },
 
-        body: JSON.stringify({ "deviceId": "handwashpi" })
+        body: JSON.stringify({ "deviceId": "handwashpi", userId: resolvedUserId })
 
     });
 

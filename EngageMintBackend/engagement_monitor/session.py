@@ -14,6 +14,7 @@ class Session:
 
     session_id: str
     device_id: str
+    user_id: str | None
     started_at: datetime
     status: str = "active"
 
@@ -54,7 +55,7 @@ class SessionManager:
         """The currently active session, or None."""
         return self._active_session
 
-    def start_session(self, device_id: str) -> Session:
+    def start_session(self, device_id: str, user_id: str | None = None) -> Session:
         """Start a new monitoring session.
 
         Args:
@@ -78,6 +79,7 @@ class SessionManager:
         self._active_session = Session(
             session_id=session_id,
             device_id=device_id,
+            user_id=user_id,
             started_at=started_at,
         )
         self._scores = []

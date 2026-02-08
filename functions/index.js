@@ -25,6 +25,12 @@ const DEFAULT_FIREBASE_WEB_API_KEY = "AIzaSyCUW35ay88CavEyxLJO6L8rv63ayZTcNko";
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+function normalizeOptionalUserId(value) {
+  if (value === undefined || value === null) return null;
+  const normalized = String(value).trim();
+  return normalized || null;
+}
+
 function ok(res, data, status = 200) {
   return res.status(status).json({ ok: true, data });
 }
@@ -143,7 +149,7 @@ app.get("/health", (_req, res) => ok(res, { service: "api", status: "up" }));
 app.post("/start", async (req, res) => {
   try {
     const db = getDb();
-    const { deviceId } = req.body || {};
+    const { deviceId, userId } = req.body || {};
     if (!deviceId) {
       return fail(res, "deviceId is required", 400);
     }
@@ -151,6 +157,7 @@ app.post("/start", async (req, res) => {
     const payload = {
       type: "start_session",
       status: "pending",
+      userId: normalizeOptionalUserId(userId),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -164,7 +171,7 @@ app.post("/start", async (req, res) => {
 app.post("/end", async (req, res) => {
   try {
     const db = getDb();
-    const { deviceId } = req.body || {};
+    const { deviceId, userId } = req.body || {};
     if (!deviceId) {
       return fail(res, "deviceId is required", 400);
     }
@@ -172,6 +179,7 @@ app.post("/end", async (req, res) => {
     const payload = {
       type: "end_session",
       status: "pending",
+      userId: normalizeOptionalUserId(userId),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 

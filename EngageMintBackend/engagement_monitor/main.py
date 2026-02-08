@@ -53,7 +53,12 @@ def run_session(
     confidence_threshold = config.get("confidenceThreshold", 0.6)
 
     # Create session document in Firestore
-    emitter.create_session(session_id, device_id, session.started_at.isoformat())
+    emitter.create_session(
+        session_id,
+        device_id,
+        session.started_at.isoformat(),
+        user_id=session.user_id,
+    )
 
     logger.info("Session %s started on device %s", session_id, device_id)
     print(f"\n[SESSION STARTED] {session_id}")
@@ -162,7 +167,7 @@ def main(device_id: str) -> None:
     shutdown_event = threading.Event()
     cmd_queue: queue.Queue[str] = queue.Queue()
 
-    def _start_session() -> None:
+    def _start_session(user_id: str | None = None) -> None:
         nonlocal session_thread, config
         if session_thread is not None and session_thread.is_alive():
             print("[WARN] Session already active. Press 'e' to end it first.")
@@ -177,7 +182,7 @@ def main(device_id: str) -> None:
 
         # Start session via manager (enforces no overlap)
         try:
-            session_mgr.start_session(device_id)
+            session_mgr.start_session(device_id, user_id=user_id)
         except RuntimeError as exc:
             print(f"[ERROR] {exc}")
             return
@@ -230,8 +235,10 @@ def main(device_id: str) -> None:
                 if pending is not None:
                     cmd_id, cmd_doc = pending
                     cmd_type = str(cmd_doc.get("type", "")).strip().lower()
+                    cmd_user_id = cmd_doc.get("userId")
+                    cmd_user_id = str(cmd_user_id).strip() if cmd_user_id else None
                     if cmd_type in {"start", "start_session"}:
-                        _start_session()
+                        _start_session(user_id=cmd_user_id)
                         emitter.mark_command(device_id, cmd_id, "processed")
                     elif cmd_type in {"end", "stop", "end_session"}:
                         _end_session()

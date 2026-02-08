@@ -10,94 +10,83 @@ import GraphLayout from "../layouts/GraphLayout.jsx";
 import AlertLayout from "../layouts/AlertLayout.jsx";
 
 /* Molecules */
-import AlertCard from '../components/AlertCard.jsx';
+import AlertCard from "../components/AlertCard.jsx";
 import ScoreDisplay from "../components/ScoreDisplay.jsx";
 import StatTracker from "../components/StatTracker.jsx";
 
 export default function Home() {
-
-  const [engagementArray, setEngagementArray] = useState([0])
-  const [timeArray, setTimeArray] = useState([0])
+  const [engagementArray, setEngagementArray] = useState([0]);
+  const [timeArray, setTimeArray] = useState([0]);
   const [alerts, setAlerts] = useState([]);
   const [score, setScore] = useState(0);
 
-  const ALPHA = 0.2;
-  const lastSmoothedRef = useRef(null);
+  const movingWindowRef = useRef([]); // last 5 seconds
   const recentValuesRef = useRef([]);
-  const engagementStateRef = useRef("NORMAL"); 
-  // NORMAL | DIP | CRITICAL
+  const engagementStateRef = useRef("NORMAL"); // NORMAL | DIP | CRITICAL
 
-  function detectEngagementEvent(currentValue, currentTime) {
-  // Thresholds (tune these)
-  const DIP_THRESHOLD = 60;        // engagement % considered a dip
-  const CRITICAL_THRESHOLD = 45;   // engagement % considered critical
+  function detectEngagementEvent(currentValue) {
+    const DIP_THRESHOLD = 60;
+    const CRITICAL_THRESHOLD = 45;
+    const TREND_WINDOW = 5;
+    const DROP_RATE = 10;
 
-  const TREND_WINDOW = 5;          // number of recent points to track
-  const DROP_RATE = 10;            // % drop to qualify as a dip
+    const recent = recentValuesRef.current;
+    recent.push(currentValue);
+    if (recent.length > TREND_WINDOW) recent.shift();
 
-  const recent = recentValuesRef.current;
+    const highestRecent = Math.max(...recent);
+    const dropFromRecentHigh = highestRecent - currentValue;
+    const prevState = engagementStateRef.current;
 
-  // Track recent smoothed values
-  recent.push(currentValue);
-  if (recent.length > TREND_WINDOW) recent.shift();
+    if (currentValue < CRITICAL_THRESHOLD && prevState !== "CRITICAL") {
+      engagementStateRef.current = "CRITICAL";
+      return { type: "THRESHOLD", message: "Critical engagement drop detected." };
+    }
 
-  // Calculate drop over recent trend
-  const highestRecent = Math.max(...recent);
-  const dropFromRecentHigh = highestRecent - currentValue;
+    if (
+      currentValue < DIP_THRESHOLD &&
+      dropFromRecentHigh >= DROP_RATE &&
+      prevState === "NORMAL"
+    ) {
+      engagementStateRef.current = "DIP";
+      return { type: "DIP", message: "Engagement dip detected." };
+    }
 
-  const prevState = engagementStateRef.current;
-
-  // CRITICAL condition
-  if (currentValue < CRITICAL_THRESHOLD && prevState !== "CRITICAL") {
-    engagementStateRef.current = "CRITICAL";
-    return {
-      type: "THRESHOLD",
-      message: "Critical engagement drop detected.",
-    };
-  }
-
-  // DIP condition
-  if (currentValue < DIP_THRESHOLD && dropFromRecentHigh >= DROP_RATE && prevState === "NORMAL") {
-    engagementStateRef.current = "DIP";
-    return {
-      type: "DIP",
-      message: "Engagement has dropped below baseline.",
-    };
-  }
-
-  // No significant event detected
     return null;
   }
+
   useEffect(() => {
     startMachine();
-  }, [])
+  }, []);
 
   useEffect(() => {
-  const interval = setInterval(() => {
-    (async () => {
+    const interval = setInterval(async () => {
       try {
-        const {data} = await getLiveData(); // now returns array of objects
+        const { data } = await getLiveData();
         const liveDataArray = data.liveData;
 
-        // Combine or average all scores for this tick
-        const total = liveDataArray.reduce((sum, item) => sum + item.engagementScore, 0);
-        const avgScore = total / liveDataArray.length;
-        setScore(avgScore);
+        // Average all devices this second
+        const avgScore =
+          liveDataArray.reduce(
+            (sum, item) => sum + item.engagementScore,
+            0
+          ) / liveDataArray.length;
 
-        // Use the most recent time or pick any representative time
-        const latestTime = liveDataArray[liveDataArray.length - 1]?.timeSinceStart ?? 0;
+        // 5-second moving average
+        const window = movingWindowRef.current;
+        window.push(avgScore);
+        if (window.length > 5) window.shift();
 
-        // Apply smoothing
-        let smoothedValue;
-        if (lastSmoothedRef.current === null) {
-          smoothedValue = avgScore;
-        } else {
-          smoothedValue = ALPHA * avgScore + (1 - ALPHA) * lastSmoothedRef.current;
-        }
-        lastSmoothedRef.current = smoothedValue;
+        const movingAverage =
+          window.reduce((sum, v) => sum + v, 0) / window.length;
 
-        // Detect engagement events
-        const event = detectEngagementEvent(smoothedValue, latestTime);
+        const roundedValue = Math.round(movingAverage);
+        setScore(roundedValue);
+
+        const latestTime =
+          liveDataArray[liveDataArray.length - 1]?.timeSinceStart ?? 0;
+
+        const event = detectEngagementEvent(roundedValue);
 
         if (event) {
           setAlerts(prev => [
@@ -108,21 +97,18 @@ export default function Home() {
               message: event.message,
               opacity: 1,
             },
-              ...prev.map(a => ({
-                ...a,
-                opacity: Math.max(0.4, a.opacity - 0.1),
-              })),
-            ]);
-          }
-
-          // Add to chart arrays, max 15 points
-          setEngagementArray(prev => [...prev.slice(-14), smoothedValue]);
-          setTimeArray(prev => [...prev.slice(-14), latestTime]);
-
-        } catch (err) {
-          console.error("Error fetching live data:", err);
+            ...prev.map(a => ({
+              ...a,
+              opacity: Math.max(0.4, a.opacity - 0.1),
+            })),
+          ]);
         }
-      })();
+
+        setEngagementArray(prev => [...prev.slice(-14), roundedValue]);
+        setTimeArray(prev => [...prev.slice(-14), latestTime]);
+      } catch (err) {
+        console.error("Live data error:", err);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
@@ -132,17 +118,20 @@ export default function Home() {
     <div className="h-screen flex flex-col overflow-hidden">
       <Header />
 
-      {/* DASHBOARD ROW */}
       <main className="flex flex-1 overflow-hidden">
         <GraphLayout title="Engagement Trend">
-          <StatTracker engagementArray={engagementArray} timeArray={timeArray} color="black"/>
+          <StatTracker
+            engagementArray={engagementArray}
+            timeArray={timeArray}
+            color="black"
+          />
         </GraphLayout>
 
         <AlertLayout title="Alerts" badge="LIVE">
-          <ScoreDisplay score={Math.round(score)}/>
-          {alerts.map((item) => {
-            return <AlertCard alert={item}  key = {item.id}/>
-          })}
+          <ScoreDisplay score={score} />
+          {alerts.map(alert => (
+            <AlertCard alert={alert} key={alert.id} />
+          ))}
         </AlertLayout>
       </main>
 

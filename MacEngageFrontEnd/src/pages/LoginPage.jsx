@@ -21,7 +21,7 @@ export default function LoginPage() {
       });
 
       // Store in localStorage
-      const data = await res.json();
+      const {data, ok} = await res.json();
       localStorage.setItem("userUUID", data.uid);
 
       if (!res.ok) throw new Error(data.message || "Login failed");

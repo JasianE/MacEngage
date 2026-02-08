@@ -13,11 +13,11 @@ const AlertCard = ({ alert }) => {
   return (
     <div
       className="
-        bg-white dark:bg-slate-900
-        border-2 border-slate-900
+        bg-slate-900/80
+        border border-slate-700
         p-4
-        rounded
-        shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
+        rounded-lg
+        shadow-sm
         transition-transform
         hover:-translate-y-0.5
         animate-in slide-in-from-right duration-300
@@ -47,7 +47,7 @@ const AlertCard = ({ alert }) => {
       </div>
 
       {/* Message */}
-      <p className="text-sm font-extrabold leading-snug text-slate-900 dark:text-slate-100">
+      <p className="text-sm font-extrabold leading-snug text-slate-100">
         {alert.message}
       </p>
 

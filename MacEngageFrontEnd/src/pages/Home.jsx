@@ -136,15 +136,15 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
       <Header />
 
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-auto lg:overflow-hidden">
         <GraphLayout title="Engagement Trend">
           <StatTracker
             engagementArray={engagementArray}
             timeArray={timeArray}
-            color="white"
+            color="#f1f5f9"
           />
         </GraphLayout>
 

@@ -48,7 +48,13 @@ function SessionPage() {
     fetchData();
   }, [sessionId]);
 
-  if (loading) return <p className="p-8 text-gray-300">Loading session...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-8">
+        <p className="text-gray-300">Loading session...</p>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -64,7 +70,13 @@ function SessionPage() {
     );
   }
 
-  if (!session) return <p className="p-8 text-gray-300">Session not found.</p>;
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white p-8">
+        <p className="text-gray-300">Session not found.</p>
+      </div>
+    );
+  }
 
   async function handleAddComment() {
     const commentText = newComment.trim();
@@ -105,12 +117,12 @@ function SessionPage() {
       </button>
 
       {/* Header */}
-      <h1 className="text-4xl font-bold mb-2 text-blue-800">{session.title}</h1>
+      <h1 className="text-4xl font-bold mb-2 text-blue-300">{session.title}</h1>
       <p className="text-xl mb-6">Overall Engagement Score: {session.overallScore}</p>
 
       {/* Live Data Chart */}
       <div className="mb-8 bg-slate-800 p-4 rounded shadow-lg">
-        <StatTracker engagementArray = {chartY} timeArray = {chartX}/>
+        <StatTracker engagementArray={chartY} timeArray={chartX} color="#f8fafc" />
       </div>
 
       {/* Comments Section */}

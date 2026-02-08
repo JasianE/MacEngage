@@ -29,8 +29,8 @@ Thumbs.db
 *.swp
 
 # Project-specific
-device/model/*.tflite
-device/config/service-account-key.json
+EngageMintBackend/model/*.tflite
+EngageMintBackend/config/service-account-key.json
 
 # Logs
 *.log

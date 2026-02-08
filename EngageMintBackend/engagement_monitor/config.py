@@ -66,7 +66,7 @@ def load_config(config_path: str | Path | None = None) -> dict:
     Falls back to hardcoded defaults if file is missing or invalid.
 
     Args:
-        config_path: Path to weights.json. Defaults to device/config/weights.json.
+        config_path: Path to weights.json. Defaults to EngageMintBackend/config/weights.json.
 
     Returns:
         Validated configuration dictionary.
@@ -108,7 +108,7 @@ def reload_config(config_path: str | Path | None = None) -> tuple[dict, list[str
     If invalid, returns the previous default config and the list of errors.
 
     Args:
-        config_path: Path to weights.json. Defaults to device/config/weights.json.
+        config_path: Path to weights.json. Defaults to EngageMintBackend/config/weights.json.
 
     Returns:
         Tuple of (config_dict, error_list). error_list is empty on success.

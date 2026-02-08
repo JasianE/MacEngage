@@ -13,14 +13,14 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Create the `device/` project skeleton, install dependencies, and establish the package structure
+**Purpose**: Create the `EngageMintBackend/` project skeleton, install dependencies, and establish the package structure
 
-- [X] T001 Create project directory structure per plan.md layout under `device/`
-- [X] T002 Create `device/requirements.txt` with pinned dependencies: `tflite-runtime>=2.14`, `firebase-admin>=7.0`, `numpy<2`, `Pillow`, `jsonschema`
-- [X] T003 [P] Create `device/engagement_monitor/__init__.py` with package metadata (version, schema version constant `SCHEMA_VERSION = "1.0.0"`)
-- [X] T004 [P] Create `device/synthetic/__init__.py` as empty package init
-- [X] T005 [P] Create `device/.gitignore` to exclude `.venv/`, `model/*.tflite`, `config/service-account-key.json`, `__pycache__/`
-- [X] T006 [P] Copy JSON schema files from `specs/001-engagement-monitor/contracts/` to `device/schemas/` for runtime validation
+- [X] T001 Create project directory structure per plan.md layout under `EngageMintBackend/`
+- [X] T002 Create `EngageMintBackend/requirements.txt` with pinned dependencies: `tflite-runtime>=2.14`, `firebase-admin>=7.0`, `numpy<2`, `Pillow`, `jsonschema`
+- [X] T003 [P] Create `EngageMintBackend/engagement_monitor/__init__.py` with package metadata (version, schema version constant `SCHEMA_VERSION = "1.0.0"`)
+- [X] T004 [P] Create `EngageMintBackend/synthetic/__init__.py` as empty package init
+- [X] T005 [P] Create `EngageMintBackend/.gitignore` to exclude `.venv/`, `model/*.tflite`, `config/service-account-key.json`, `__pycache__/`
+- [X] T006 [P] Copy JSON schema files from `specs/001-engagement-monitor/contracts/` to `EngageMintBackend/schemas/` for runtime validation
 
 ---
 
@@ -30,10 +30,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T007 Create default `device/config/weights.json` with all 8 behavior weights, `confidenceThreshold: 0.6`, and `tickIntervalSeconds: 5` per weight-config.v1 schema
-- [X] T008 Implement config loader and validator in `device/engagement_monitor/config.py` — load `weights.json`, validate against weight-config.v1 schema using `jsonschema`, fall back to hardcoded defaults if file missing, reject invalid configs with logged error
-- [X] T009 [P] Implement payload builder in `device/engagement_monitor/schemas.py` — functions `build_tick_payload()` and `build_summary_payload()` that construct dicts conforming to metric-tick.v1 and session-summary.v1 schemas, always include `schemaVersion`
-- [X] T010 [P] Implement Firestore emitter in `device/engagement_monitor/emitter.py` — initialize `firebase-admin` with service account credentials from `GOOGLE_APPLICATION_CREDENTIALS` env var, provide `emit_tick(payload)` to write to `sessions/{sessionId}/ticks/`, `emit_session(payload)` to write/update `sessions/{sessionId}`, and `emit_summary(sessionId, summary)` to update the session document with the summary
+- [X] T007 Create default `EngageMintBackend/config/weights.json` with all 8 behavior weights, `confidenceThreshold: 0.6`, and `tickIntervalSeconds: 5` per weight-config.v1 schema
+- [X] T008 Implement config loader and validator in `EngageMintBackend/engagement_monitor/config.py` — load `weights.json`, validate against weight-config.v1 schema using `jsonschema`, fall back to hardcoded defaults if file missing, reject invalid configs with logged error
+- [X] T009 [P] Implement payload builder in `EngageMintBackend/engagement_monitor/schemas.py` — functions `build_tick_payload()` and `build_summary_payload()` that construct dicts conforming to metric-tick.v1 and session-summary.v1 schemas, always include `schemaVersion`
+- [X] T010 [P] Implement Firestore emitter in `EngageMintBackend/engagement_monitor/emitter.py` — initialize `firebase-admin` with service account credentials from `GOOGLE_APPLICATION_CREDENTIALS` env var, provide `emit_tick(payload)` to write to `sessions/{sessionId}/ticks/`, `emit_session(payload)` to write/update `sessions/{sessionId}`, and `emit_summary(sessionId, summary)` to update the session document with the summary
 
 **Checkpoint**: Config loading, payload construction, and Firestore writes are all operational
 
@@ -47,12 +47,12 @@
 
 ### Implementation
 
-- [X] T011 [P] [US1] Implement camera capture in `device/engagement_monitor/camera.py` — wrap `picamera2` with `create_preview_configuration` at 640×480 RGB888, provide `capture_frame()` returning numpy RGB array, `start()`/`stop()` lifecycle methods
-- [X] T012 [P] [US1] Implement TFLite detector in `device/engagement_monitor/detector.py` — load `model/model_unquant.tflite` and `model/labels.txt`, provide `detect(frame) -> list[tuple[str, float]]` that resizes frame to 224×224, normalizes to [-1,1], runs inference, returns list of `(behavior_label, confidence)` pairs above the configured confidence threshold
-- [X] T013 [US1] Implement engagement scorer in `device/engagement_monitor/scorer.py` — provide `compute_score(detections, weights) -> int` that takes a list of `(behavior_label, confidence)` detections and weight config, computes mean detected-label weight, clamps to [0,100], and returns `engagementScore`
-- [X] T014 [P] [US1] Implement terminal indicator in `device/engagement_monitor/indicator.py` — provide `show(score: int)` that prints a single-line ANSI color-coded bar (green ≥70, yellow ≥40, red <40) with numeric score, using `\r` carriage return for in-place updates
-- [X] T015 [US1] Implement main tick loop in `device/engagement_monitor/main.py` — on startup: load config (T008), initialize camera (T011), load detector (T012), initialize emitter (T010); provide `run_session(session_id, device_id)` that every `tickIntervalSeconds`: captures frame → detects behaviors → computes score → builds tick payload (T009) → emits to Firestore (T010) → updates indicator (T014); accept keyboard input: `s` to start session, `e` to end session, `q` to quit
-- [X] T016 [US1] Wire up `device/engagement_monitor/__main__.py` entry point so `python -m engagement_monitor` launches `main.py` with device ID from environment variable `DEVICE_ID` (default: hostname)
+- [X] T011 [P] [US1] Implement camera capture in `EngageMintBackend/engagement_monitor/camera.py` — wrap `picamera2` with `create_preview_configuration` at 640×480 RGB888, provide `capture_frame()` returning numpy RGB array, `start()`/`stop()` lifecycle methods
+- [X] T012 [P] [US1] Implement TFLite detector in `EngageMintBackend/engagement_monitor/detector.py` — load `model/model_unquant.tflite` and `model/labels.txt`, provide `detect(frame) -> list[tuple[str, float]]` that resizes frame to 224×224, normalizes to [-1,1], runs inference, returns list of `(behavior_label, confidence)` pairs above the configured confidence threshold
+- [X] T013 [US1] Implement engagement scorer in `EngageMintBackend/engagement_monitor/scorer.py` — provide `compute_score(detections, weights) -> int` that takes a list of `(behavior_label, confidence)` detections and weight config, computes mean detected-label weight, clamps to [0,100], and returns `engagementScore`
+- [X] T014 [P] [US1] Implement terminal indicator in `EngageMintBackend/engagement_monitor/indicator.py` — provide `show(score: int)` that prints a single-line ANSI color-coded bar (green ≥70, yellow ≥40, red <40) with numeric score, using `\r` carriage return for in-place updates
+- [X] T015 [US1] Implement main tick loop in `EngageMintBackend/engagement_monitor/main.py` — on startup: load config (T008), initialize camera (T011), load detector (T012), initialize emitter (T010); provide `run_session(session_id, device_id)` that every `tickIntervalSeconds`: captures frame → detects behaviors → computes score → builds tick payload (T009) → emits to Firestore (T010) → updates indicator (T014); accept keyboard input: `s` to start session, `e` to end session, `q` to quit
+- [X] T016 [US1] Wire up `EngageMintBackend/engagement_monitor/__main__.py` entry point so `python -m engagement_monitor` launches `main.py` with device ID from environment variable `DEVICE_ID` (default: hostname)
 
 **Checkpoint**: A single session can be started, runs tick loop with live camera inference, emits valid payloads to Firestore, and shows terminal indicator. User Story 1 is fully functional and independently testable.
 
@@ -66,9 +66,9 @@
 
 ### Implementation
 
-- [X] T017 [US2] Implement session state manager in `device/engagement_monitor/session.py` — provide `SessionManager` class with `start_session(device_id) -> Session` (generates UUID, records start time, sets status active), `end_session() -> SessionSummary` (computes duration, average engagement from accumulated scores, tick count, timeline ref `sessions/{sid}/ticks`), `is_active -> bool`, and guard that raises error if starting while active
-- [X] T018 [US2] Integrate SessionManager into `device/engagement_monitor/main.py` — replace inline session handling with `SessionManager`, accumulate tick scores for summary computation, on `e` command: call `end_session()`, build summary payload (T009), emit summary to Firestore (T010), print summary to terminal
-- [X] T019 [US2] Add session document creation on start in `device/engagement_monitor/emitter.py` — on session start, write a session document to `sessions/{sessionId}` with `deviceId`, `startedAt`, `status: "active"`, `endedAt: null`; on session end, update with `endedAt`, `status: "completed"`, and embedded `summary`
+- [X] T017 [US2] Implement session state manager in `EngageMintBackend/engagement_monitor/session.py` — provide `SessionManager` class with `start_session(device_id) -> Session` (generates UUID, records start time, sets status active), `end_session() -> SessionSummary` (computes duration, average engagement from accumulated scores, tick count, timeline ref `sessions/{sid}/ticks`), `is_active -> bool`, and guard that raises error if starting while active
+- [X] T018 [US2] Integrate SessionManager into `EngageMintBackend/engagement_monitor/main.py` — replace inline session handling with `SessionManager`, accumulate tick scores for summary computation, on `e` command: call `end_session()`, build summary payload (T009), emit summary to Firestore (T010), print summary to terminal
+- [X] T019 [US2] Add session document creation on start in `EngageMintBackend/engagement_monitor/emitter.py` — on session start, write a session document to `sessions/{sessionId}` with `deviceId`, `startedAt`, `status: "active"`, `endedAt: null`; on session end, update with `endedAt`, `status: "completed"`, and embedded `summary`
 
 **Checkpoint**: Sessions have formal start/end, unique IDs, overlap prevention, and a summary written to Firestore. User Stories 1 AND 2 are both independently functional.
 
@@ -82,8 +82,8 @@
 
 ### Implementation
 
-- [X] T020 [US3] Enhance config validation in `device/engagement_monitor/config.py` — add `reload_config()` method that re-reads `weights.json` from disk, validates against schema, and returns `(config, errors)` tuple; if invalid, return previous valid config and log each validation error with field-level detail
-- [X] T021 [US3] Integrate config reload at session start in `device/engagement_monitor/main.py` — before each `start_session()`, call `reload_config()` so weight changes take effect on next session without restarting the process; log loaded weights at INFO level
+- [X] T020 [US3] Enhance config validation in `EngageMintBackend/engagement_monitor/config.py` — add `reload_config()` method that re-reads `weights.json` from disk, validates against schema, and returns `(config, errors)` tuple; if invalid, return previous valid config and log each validation error with field-level detail
+- [X] T021 [US3] Integrate config reload at session start in `EngageMintBackend/engagement_monitor/main.py` — before each `start_session()`, call `reload_config()` so weight changes take effect on next session without restarting the process; log loaded weights at INFO level
 
 **Checkpoint**: Configuration changes apply on next session start. Invalid configs are safely rejected. User Stories 1, 2, AND 3 are all functional.
 
@@ -97,9 +97,9 @@
 
 ### Implementation
 
-- [X] T022 [US4] Implement synthetic data generator in `device/synthetic/generator.py` — provide `generate_session(device_id, start_time, duration_minutes) -> tuple[list[dict], dict]` that produces a list of tick payloads and a session summary with realistic engagement patterns (sine wave + random noise for score variation, plausible behavior distributions), all conforming to metric-tick.v1 and session-summary.v1 schemas
-- [X] T023 [US4] Implement synthetic CLI entry point in `device/synthetic/__main__.py` — accept `--sessions N` (default 5), `--device-id` (default hostname), `--duration` (default 30 min); for each session: generate data (T022), write session document + all tick docs to Firestore (T010), print progress; uses same emitter and schema builder as real sessions
-- [X] T024 [US4] Add `--dry-run` flag to `device/synthetic/__main__.py` — when set, print generated payloads to stdout as JSON instead of writing to Firestore, for validation without cloud access
+- [X] T022 [US4] Implement synthetic data generator in `EngageMintBackend/synthetic/generator.py` — provide `generate_session(device_id, start_time, duration_minutes) -> tuple[list[dict], dict]` that produces a list of tick payloads and a session summary with realistic engagement patterns (sine wave + random noise for score variation, plausible behavior distributions), all conforming to metric-tick.v1 and session-summary.v1 schemas
+- [X] T023 [US4] Implement synthetic CLI entry point in `EngageMintBackend/synthetic/__main__.py` — accept `--sessions N` (default 5), `--device-id` (default hostname), `--duration` (default 30 min); for each session: generate data (T022), write session document + all tick docs to Firestore (T010), print progress; uses same emitter and schema builder as real sessions
+- [X] T024 [US4] Add `--dry-run` flag to `EngageMintBackend/synthetic/__main__.py` — when set, print generated payloads to stdout as JSON instead of writing to Firestore, for validation without cloud access
 
 **Checkpoint**: Synthetic sessions populate Firestore. Dashboard can display historical engagement data. All 4 user stories are independently functional.
 
@@ -109,11 +109,11 @@
 
 **Purpose**: Stability, documentation, and demo-readiness improvements
 
-- [X] T025 [P] Add structured logging throughout all modules in `device/engagement_monitor/` — use Python `logging` with format `%(asctime)s %(levelname)s %(name)s %(message)s`, log inference results at DEBUG, tick emissions at INFO, errors at ERROR
-- [X] T026 [P] Create `device/README.md` with project overview, setup instructions summary, and link to `specs/001-engagement-monitor/quickstart.md`
+- [X] T025 [P] Add structured logging throughout all modules in `EngageMintBackend/engagement_monitor/` — use Python `logging` with format `%(asctime)s %(levelname)s %(name)s %(message)s`, log inference results at DEBUG, tick emissions at INFO, errors at ERROR
+- [X] T026 [P] Create `EngageMintBackend/README.md` with project overview, setup instructions summary, and link to `specs/001-engagement-monitor/quickstart.md`
 - [X] T027 Validate full quickstart flow end-to-end per `specs/001-engagement-monitor/quickstart.md` — verify setup steps, run instructions, and troubleshooting entries are accurate
-- [X] T028 [P] Add graceful shutdown handling in `device/engagement_monitor/main.py` — catch `SIGINT`/`SIGTERM`, end active session cleanly (emit summary), stop camera, close Firestore connection, exit with code 0
-- [X] T029 Handle edge case: no valid detections in frame in `device/engagement_monitor/scorer.py` — return `engagementScore: 0` when detection list is empty or has no known labels
+- [X] T028 [P] Add graceful shutdown handling in `EngageMintBackend/engagement_monitor/main.py` — catch `SIGINT`/`SIGTERM`, end active session cleanly (emit summary), stop camera, close Firestore connection, exit with code 0
+- [X] T029 Handle edge case: no valid detections in frame in `EngageMintBackend/engagement_monitor/scorer.py` — return `engagementScore: 0` when detection list is empty or has no known labels
 
 ---
 

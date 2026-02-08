@@ -23,7 +23,7 @@ def _ensure_initialized():
     cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     if not cred_path:
         # Convenience default for local device runs:
-        # use device/config/service-account-key.json if present.
+        # use EngageMintBackend/config/service-account-key.json if present.
         default_key = Path(__file__).resolve().parents[1] / "config" / "service-account-key.json"
         if default_key.exists():
             cred_path = str(default_key)

@@ -9,6 +9,35 @@ const CHART_COLORS = ["#4338ca", "#9333ea", "#0ea5e9", "#10b981", "#f59e0b", "#e
 function formatSessionDate(rawValue) {
   if (!rawValue) return "Date unavailable";
 
+  if (typeof rawValue?.toDate === "function") {
+    const parsedFromToDate = rawValue.toDate();
+    if (!Number.isNaN(parsedFromToDate?.getTime?.())) {
+      return new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(parsedFromToDate);
+    }
+  }
+
+  if (typeof rawValue === "object") {
+    const seconds = rawValue?.seconds ?? rawValue?._seconds;
+    if (typeof seconds === "number") {
+      const parsedFromSeconds = new Date(seconds * 1000);
+      if (!Number.isNaN(parsedFromSeconds.getTime())) {
+        return new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(parsedFromSeconds);
+      }
+    }
+  }
+
   const parsed = new Date(rawValue);
   if (Number.isNaN(parsed.getTime())) return "Date unavailable";
 
@@ -19,6 +48,17 @@ function formatSessionDate(rawValue) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(parsed);
+}
+
+function getSessionDateValue(session) {
+  return (
+    session?.startedAt ||
+    session?.createdAt ||
+    session?.startTime ||
+    session?.date ||
+    session?.timestamp ||
+    null
+  );
 }
 
 function getSessionTitle(session, index = 0) {
@@ -499,7 +539,7 @@ export default function Analysis() {
                             {typeof score === "number" ? `${score}%` : "N/A"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">
-                            {formatSessionDate(session?.startedAt || session?.createdAt)}
+                            {formatSessionDate(getSessionDateValue(session))}
                           </td>
                           <td className="px-6 py-4 text-right text-sm font-medium text-gray-600">
                             {lastSecond ? `${Math.round(lastSecond / 60)}m` : "N/A"}

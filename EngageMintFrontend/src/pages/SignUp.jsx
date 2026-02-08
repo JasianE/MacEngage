@@ -70,11 +70,11 @@ export default function SignUpPage() {
         className="w-full max-w-[400px] bg-white border border-gray-100 rounded-2xl shadow-xl shadow-gray-300/40 px-8 py-8"
       >
         <div className="flex flex-col items-center pt-1 pb-2">
-          <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-4 shadow-sm overflow-hidden">
+          <div className="w-20 h-20 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-600 mb-5 shadow-sm overflow-hidden">
             <img
               src={engagementLogoText}
               alt="Engagement logo"
-              className="h-8 w-auto object-contain"
+              className="h-14 w-auto object-contain"
             />
           </div>
           <h1 className="text-[38px] leading-none font-extrabold tracking-tight text-slate-900 uppercase">

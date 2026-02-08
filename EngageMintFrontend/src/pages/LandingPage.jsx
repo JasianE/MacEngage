@@ -28,7 +28,7 @@ export default function Landing() {
             <img
               src={engagementLogoText}
               alt="Engagement logo"
-              className="h-10 w-10 rounded-xl object-contain"
+              className="h-14 w-14 rounded-2xl object-contain"
             />
             <span className="text-xl font-extrabold tracking-[-0.04em] leading-none md:text-2xl">
               ENGAGE<span className="text-[#159A93]">MINT</span>
@@ -62,7 +62,7 @@ export default function Landing() {
           <img
             src={engagementLogoText}
             alt="Engagement logo"
-            className="mb-7 h-16 w-16 rounded-2xl object-contain"
+            className="mb-8 h-32 w-32 rounded-3xl object-contain"
           />
 
           <h1 className="text-5xl font-black tracking-[-0.06em] leading-[0.94] text-[#0b1534] dark:text-white md:text-6xl">

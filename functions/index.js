@@ -10,6 +10,12 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const app = express();
 
+// NOTE:
+// Firebase Web API keys are not treated as sensitive secrets.
+// For Spark-plan projects (no Secret Manager), you can paste the key below.
+// Optional override at runtime: process.env.FIREBASE_WEB_API_KEY
+const DEFAULT_FIREBASE_WEB_API_KEY = "";
+
 app.use(cors({ origin: true }));
 app.use(express.json());
 
@@ -110,9 +116,13 @@ app.post("/login", async (req, res) => {
       return fail(res, "email and password are required", 400);
     }
 
-    const apiKey = process.env.FIREBASE_WEB_API_KEY;
+    const apiKey = process.env.FIREBASE_WEB_API_KEY || DEFAULT_FIREBASE_WEB_API_KEY;
     if (!apiKey) {
-      return fail(res, "Missing FIREBASE_WEB_API_KEY env variable", 500);
+      return fail(
+        res,
+        "Missing Firebase Web API key. Set process.env.FIREBASE_WEB_API_KEY or DEFAULT_FIREBASE_WEB_API_KEY in functions/index.js",
+        500,
+      );
     }
 
     const response = await fetch(

@@ -26,9 +26,11 @@ def compute_score(detections: list[tuple[str, float]], weights: dict) -> int:
         return 0
 
     label_weights: list[int] = []
-    for label, _confidence in detections:
+    confidences: list[float] = []
+    for label, confidence in detections:
         if label in weights:
             label_weights.append(int(weights.get(label, 0)))
+            confidences.append(float(confidence))
         else:
             logger.warning("Unknown behavior label '%s' — skipping", label)
 
@@ -37,6 +39,21 @@ def compute_score(detections: list[tuple[str, float]], weights: dict) -> int:
         return 0
 
     raw_score = sum(label_weights) / len(label_weights)
+
+    use_confidence = bool(weights.get("useConfidenceInScoring", False))
+    if use_confidence and confidences:
+        strength = float(weights.get("confidenceImpactStrength", 0.35))
+        strength = max(0.0, min(1.0, strength))
+        avg_confidence = sum(confidences) / len(confidences)
+        confidence_modifier = (1.0 - strength) + (strength * avg_confidence)
+        raw_score *= confidence_modifier
+        logger.debug(
+            "Confidence-adjusted score (modifier=%.3f, avg_conf=%.3f, strength=%.2f)",
+            confidence_modifier,
+            avg_confidence,
+            strength,
+        )
+
     engagement_score = max(0, min(100, round(raw_score)))
 
     logger.debug(

@@ -28,3 +28,18 @@ def test_reload_config_returns_previous_valid_config_on_invalid(tmp_path: Path):
     cfg2, errors2 = reload_config(weights)
     assert errors2
     assert cfg2["writing_notes"] == 50
+
+
+def test_load_config_accepts_legacy_config_without_confidence_scoring_keys(tmp_path: Path):
+    weights = tmp_path / "weights.json"
+    legacy = dict(DEFAULT_CONFIG)
+    legacy.pop("useConfidenceInScoring")
+    legacy.pop("confidenceImpactStrength")
+    weights.write_text(json.dumps(legacy), encoding="utf-8")
+
+    cfg = load_config(weights)
+
+    # Legacy config should remain valid and load successfully.
+    assert cfg["raising_hand"] == DEFAULT_CONFIG["raising_hand"]
+    assert "useConfidenceInScoring" not in cfg
+    assert "confidenceImpactStrength" not in cfg

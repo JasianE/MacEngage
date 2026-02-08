@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 from datetime import datetime, timezone
 
 import firebase_admin
@@ -20,6 +21,15 @@ def _ensure_initialized():
         return
 
     cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if not cred_path:
+        # Convenience default for local device runs:
+        # use device/config/service-account-key.json if present.
+        default_key = Path(__file__).resolve().parents[1] / "config" / "service-account-key.json"
+        if default_key.exists():
+            cred_path = str(default_key)
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = cred_path
+            logger.info("Using default Firebase key at %s", cred_path)
+
     if cred_path:
         cred = credentials.Certificate(cred_path)
     else:
@@ -55,7 +65,7 @@ def create_session(session_id: str, device_id: str, started_at: str, title: str 
         "overallScore": 0,
         "comments": [],
     })
-    logger.info("Session created: sessions/%s (device=%s)", session_id, device_id)
+    logger.debug("Session created: sessions/%s (device=%s)", session_id, device_id)
 
 
 def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
@@ -73,7 +83,7 @@ def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
     db.collection("sessions").document(session_id).update({
         "overallScore": float(summary.get("averageEngagement", 0)),
     })
-    logger.info("Session completed: sessions/%s", session_id)
+    logger.debug("Session completed: sessions/%s", session_id)
 
 
 def emit_tick(session_id: str, payload: dict, time_since_start: int) -> str:
@@ -94,7 +104,7 @@ def emit_tick(session_id: str, payload: dict, time_since_start: int) -> str:
     }
     doc_ref = db.collection("sessions").document(session_id).collection("liveData").add(live_data)
     doc_id = doc_ref[1].id
-    logger.info("Tick emitted: sessions/%s/liveData/%s", session_id, doc_id)
+    # logger.info("Tick emitted: sessions/%s/liveData/%s", session_id, doc_id)
     return doc_id
 
 
@@ -107,7 +117,7 @@ def emit_session(session_id: str, session_data: dict) -> None:
     """
     db = get_db()
     db.collection("sessions").document(session_id).set(session_data, merge=True)
-    logger.info("Session document written: sessions/%s", session_id)
+    logger.debug("Session document written: sessions/%s", session_id)
 
 
 def emit_summary(session_id: str, summary: dict) -> None:
@@ -121,7 +131,50 @@ def emit_summary(session_id: str, summary: dict) -> None:
     db.collection("sessions").document(session_id).update({
         "overallScore": float(summary.get("averageEngagement", 0)),
     })
-    logger.info("Session summary written: sessions/%s", session_id)
+    logger.debug("Session summary written: sessions/%s", session_id)
+
+
+def fetch_pending_command(device_id: str) -> tuple[str, dict] | None:
+    """Fetch the oldest pending remote command for a device.
+
+    Command documents are expected at:
+      devices/{deviceId}/commands/{commandId}
+
+    Returns:
+        Tuple of (command_id, command_dict) or None if no pending command.
+    """
+    db = get_db()
+    cmd_ref = (
+        db.collection("devices")
+        .document(device_id)
+        .collection("commands")
+        .where("status", "==", "pending")
+        .limit(1)
+    )
+    docs = list(cmd_ref.stream())
+    if not docs:
+        return None
+    doc = docs[0]
+    return doc.id, (doc.to_dict() or {})
+
+
+def mark_command(device_id: str, command_id: str, status: str, message: str | None = None) -> None:
+    """Mark a remote command as processed/rejected/error."""
+    db = get_db()
+    update_data = {
+        "status": status,
+        "processedAt": firestore.SERVER_TIMESTAMP,
+    }
+    if message:
+        update_data["message"] = message
+
+    (
+        db.collection("devices")
+        .document(device_id)
+        .collection("commands")
+        .document(command_id)
+        .set(update_data, merge=True)
+    )
 
 
 def close():

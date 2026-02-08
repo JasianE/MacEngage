@@ -1,6 +1,8 @@
 """Main tick loop — orchestrates camera, detection, scoring, and emission."""
 
 import logging
+import os
+import queue
 import signal
 import sys
 import threading
@@ -141,16 +143,71 @@ def main(device_id: str) -> None:
     # Session manager — enforces single-session-at-a-time
     session_mgr = SessionManager()
 
+    # Remote command polling is enabled by default for frontend-triggered start/end.
+    enable_remote_commands = os.environ.get("ENABLE_REMOTE_COMMANDS", "1") == "1"
+    enable_stdin_commands = os.environ.get("ENABLE_STDIN_COMMANDS", "1") == "1"
+
     print("=" * 60)
     print("  Live Group Engagement Monitor")
     print("=" * 60)
     print(f"  Device: {device_id}")
-    print("  Commands: 's' = start session, 'q' = quit")
+    if enable_stdin_commands:
+        print("  Commands: 's' = start session, 'e' = end session, 'q' = quit")
+    if enable_remote_commands:
+        print("  Remote commands enabled: devices/{deviceId}/commands")
     print("=" * 60)
 
     session_thread: threading.Thread | None = None
     stop_event = threading.Event()
     shutdown_event = threading.Event()
+    cmd_queue: queue.Queue[str] = queue.Queue()
+
+    def _start_session() -> None:
+        nonlocal session_thread, config
+        if session_thread is not None and session_thread.is_alive():
+            print("[WARN] Session already active. Press 'e' to end it first.")
+            return
+
+        # Reload config for each new session (T021)
+        config, errors = reload_config()
+        if errors:
+            print(f"[WARN] Config errors (using defaults): {errors[0]}")
+        else:
+            logger.info("Config reloaded for new session")
+
+        # Start session via manager (enforces no overlap)
+        try:
+            session_mgr.start_session(device_id)
+        except RuntimeError as exc:
+            print(f"[ERROR] {exc}")
+            return
+
+        stop_event.clear()
+        session_thread = threading.Thread(
+            target=run_session,
+            args=(session_mgr, device_id, config, camera, detector, stop_event),
+            daemon=True,
+        )
+        session_thread.start()
+
+    def _end_session() -> None:
+        nonlocal session_thread
+        if session_thread is None or not session_thread.is_alive():
+            print("[WARN] No active session to end.")
+            return
+        stop_event.set()
+        session_thread.join(timeout=10)
+        session_thread = None
+
+    def _stdin_reader() -> None:
+        while not shutdown_event.is_set():
+            try:
+                cmd = input("\n> ").strip().lower()
+            except EOFError:
+                cmd = "q"
+            cmd_queue.put(cmd)
+            if cmd == "q":
+                return
 
     def _signal_handler(signum, frame):
         """Handle SIGINT/SIGTERM for graceful shutdown."""
@@ -163,53 +220,43 @@ def main(device_id: str) -> None:
     signal.signal(signal.SIGINT, _signal_handler)
     signal.signal(signal.SIGTERM, _signal_handler)
 
+    if enable_stdin_commands:
+        threading.Thread(target=_stdin_reader, daemon=True).start()
+
     try:
         while not shutdown_event.is_set():
+            if enable_remote_commands:
+                pending = emitter.fetch_pending_command(device_id)
+                if pending is not None:
+                    cmd_id, cmd_doc = pending
+                    cmd_type = str(cmd_doc.get("type", "")).strip().lower()
+                    if cmd_type in {"start", "start_session"}:
+                        _start_session()
+                        emitter.mark_command(device_id, cmd_id, "processed")
+                    elif cmd_type in {"end", "stop", "end_session"}:
+                        _end_session()
+                        emitter.mark_command(device_id, cmd_id, "processed")
+                    elif cmd_type in {"shutdown", "quit"}:
+                        emitter.mark_command(device_id, cmd_id, "processed")
+                        cmd_queue.put("q")
+                    else:
+                        emitter.mark_command(
+                            device_id,
+                            cmd_id,
+                            "rejected",
+                            f"Unknown command type: {cmd_type}",
+                        )
+
             try:
-                cmd = input("\n> ").strip().lower()
-            except EOFError:
-                break
+                cmd = cmd_queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
 
             if cmd == "s":
-                if session_thread is not None and session_thread.is_alive():
-                    print("[WARN] Session already active. Press 'e' to end it first.")
-                    continue
-
-                # Reload config for each new session (T021)
-                config, errors = reload_config()
-                if errors:
-                    print(f"[WARN] Config errors (using defaults): {errors[0]}")
-                else:
-                    logger.info("Config reloaded for new session")
-                    weights_info = {k: config[k] for k in [
-                        "raising_hand", "writing_notes", "looking_at_board",
-                        "on_phone", "head_down", "talking_to_group",
-                        "hands_on_head", "looking_away_long",
-                    ]}
-                    logger.info("Active weights: %s", weights_info)
-
-                # Start session via manager (enforces no overlap)
-                try:
-                    session_mgr.start_session(device_id)
-                except RuntimeError as exc:
-                    print(f"[ERROR] {exc}")
-                    continue
-
-                stop_event.clear()
-                session_thread = threading.Thread(
-                    target=run_session,
-                    args=(session_mgr, device_id, config, camera, detector, stop_event),
-                    daemon=True,
-                )
-                session_thread.start()
+                _start_session()
 
             elif cmd == "e":
-                if session_thread is None or not session_thread.is_alive():
-                    print("[WARN] No active session to end.")
-                    continue
-                stop_event.set()
-                session_thread.join(timeout=10)
-                session_thread = None
+                _end_session()
 
             elif cmd == "q":
                 if session_thread is not None and session_thread.is_alive():

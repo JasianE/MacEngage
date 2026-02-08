@@ -122,40 +122,49 @@ def _capture_loop(
 
 
 def main() -> None:
-    cfg = _load_config()
     base_dir = Path(__file__).resolve().parent.parent
-    output_root = base_dir / cfg["outputDir"]
-    output_dir = output_root / cfg["label"]
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    camera = Camera(width=cfg["width"], height=cfg["height"])
-    camera.start()
 
     print("=" * 64)
     print("  Training Photo Capture (Teachable Machine)")
     print("=" * 64)
     print(f"  Config: {_CONFIG_PATH}")
-    print(f"  Label: {cfg['label']}")
-    print(f"  Output: {output_dir}")
-    print(f"  Resolution: {cfg['width']}x{cfg['height']}")
-    print(f"  Interval: {cfg['intervalSeconds']}s")
-    print(f"  flip180: {cfg['flip180']} | swapRedBlue: {cfg['swapRedBlue']}")
+    print("  Config is reloaded each time you press Enter to START")
     print("  Control: Press Enter to START, Enter again to STOP, Ctrl+C to quit")
     print("=" * 64)
 
     running = False
     stop_event = threading.Event()
     capture_thread: threading.Thread | None = None
+    camera: Camera | None = None
+    cfg: dict = {}
+    output_dir: Path | None = None
     run_photo_count = 0
 
     def _run_capture() -> None:
         nonlocal run_photo_count
+        assert camera is not None
+        assert output_dir is not None
         run_photo_count = _capture_loop(camera, output_dir, cfg, stop_event)
 
     try:
         while True:
             input()
             if not running:
+                cfg = _load_config()
+                output_root = base_dir / cfg["outputDir"]
+                output_dir = output_root / cfg["label"]
+                output_dir.mkdir(parents=True, exist_ok=True)
+
+                print("[CONFIG] Loaded:")
+                print(f"  Label: {cfg['label']}")
+                print(f"  Output: {output_dir}")
+                print(f"  Resolution: {cfg['width']}x{cfg['height']}")
+                print(f"  Interval: {cfg['intervalSeconds']}s")
+                print(f"  flip180: {cfg['flip180']} | swapRedBlue: {cfg['swapRedBlue']}")
+
+                camera = Camera(width=cfg["width"], height=cfg["height"])
+                camera.start()
+
                 stop_event.clear()
                 run_photo_count = 0
                 capture_thread = threading.Thread(target=_run_capture, daemon=True)
@@ -166,6 +175,9 @@ def main() -> None:
                 stop_event.set()
                 if capture_thread is not None:
                     capture_thread.join(timeout=5)
+                if camera is not None:
+                    camera.stop()
+                    camera = None
                 running = False
                 print(f"[STATE] Capture stopped. Photos this run: {run_photo_count}")
                 print("[STATE] Press Enter to start again, or Ctrl+C to quit.")
@@ -177,7 +189,8 @@ def main() -> None:
             stop_event.set()
             if capture_thread is not None:
                 capture_thread.join(timeout=5)
-        camera.stop()
+        if camera is not None:
+            camera.stop()
 
 
 if __name__ == "__main__":

@@ -21,18 +21,65 @@ See the full setup guide: [quickstart.md](../specs/001-engagement-monitor/quicks
 cd device
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
+
+# Required camera dependency (system package)
+sudo apt update && sudo apt install -y python3-picamera2
+
 pip install -r requirements.txt
 
-# Set Firebase credentials
-export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
+# Firebase credentials
+# Optional if your key exists at device/config/service-account-key.json (auto-detected).
+# Otherwise set explicitly:
+# export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
 
-# Place model files
-cp model_unquant.tflite model/
-cp labels.txt model/
+# (Already done) model files should exist at:
+# model/model_unquant.tflite
+# model/labels.txt
 
-# Run
+# Run with verbose model-observation logs
+export LOG_LEVEL=INFO
 python -m engagement_monitor
 ```
+
+### Do I need Firebase CLI commands every time?
+
+No. You do **not** need to run `firebase login`, `firebase deploy`, or other Firebase CLI
+commands to start the device monitor.
+
+At runtime, the monitor only needs Firebase Admin credentials. It now auto-loads
+`config/service-account-key.json` when present, so your normal flow is simply:
+
+```bash
+cd device
+source .venv/bin/activate
+python -m engagement_monitor
+```
+
+If you prefer, `py -m engagement_monitor` also works in environments where `py` is available.
+
+If `python3-picamera2` is installed but import still fails, your venv was likely
+created without `--system-site-packages`. Fix with either:
+
+```bash
+# Recommended: recreate venv with system site packages enabled
+rm -rf .venv
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+or temporary workaround:
+
+```bash
+export PYTHONPATH="/usr/lib/python3/dist-packages"
+```
+
+During runtime, you'll see logs like:
+
+- `Model sees top predictions: raising_hand=0.81, writing_notes=0.14, ...`
+- `Detections above threshold 0.60: raising_hand=0.81`
+
+This is the live visibility for what the model is currently seeing.
 
 ## Commands
 

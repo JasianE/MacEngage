@@ -9,6 +9,7 @@ Real-time engagement monitoring system for Raspberry Pi 5. Uses a Teachable Mach
 - **Session lifecycle**: Formal start/end with unique IDs, overlap prevention, and summaries
 - **Firestore emission**: Tick-by-tick and session-level data for dashboard consumption
 - **Configurable weights**: Edit `config/weights.json` — changes apply on next session start
+- **Confidence-aware scoring (optional)**: Toggle confidence impact and tune its strength in `config/weights.json`
 - **Synthetic sessions**: Generate realistic historical data for dashboard demos
 - **Privacy-first**: No per-person data, no media storage, no identification
 
@@ -88,6 +89,22 @@ This is the live visibility for what the model is currently seeing.
 | `s` | Start a new session |
 | `e` | End the active session |
 | `q` | Quit the application |
+
+## Scoring Configuration
+
+`config/weights.json` supports optional confidence-based score attenuation:
+
+- `useConfidenceInScoring` (boolean): Enable/disable confidence impact.
+- `confidenceImpactStrength` (0.0 to 1.0):
+  - `0.0` = no confidence effect
+  - `1.0` = full confidence attenuation
+  - Recommended starting point: `0.35`
+
+When enabled, score uses:
+
+`final = base * ((1 - strength) + strength * avg_confidence)`
+
+This keeps behavior weights as the primary signal while reducing scores for low-certainty detections.
 
 ## Synthetic Data
 

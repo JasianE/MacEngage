@@ -65,6 +65,18 @@
       "description": "Minimum confidence score to include a detection. Default: 0.6",
       "default": 0.6
     },
+    "useConfidenceInScoring": {
+      "type": "boolean",
+      "description": "Whether scoring should be attenuated by average detection confidence. Default: false",
+      "default": false
+    },
+    "confidenceImpactStrength": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "How strongly confidence affects scoring. 0 = no effect, 1 = full effect. Default: 0.35",
+      "default": 0.35
+    },
     "tickIntervalSeconds": {
       "type": "number",
       "minimum": 0.1,

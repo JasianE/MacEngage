@@ -1,7 +1,7 @@
 /* Utils + Libs */
 import { useState, useEffect, useRef } from "react";
 import { getLiveData } from "../utils/fetchResponseData.js";
-import { startMachine } from "../utils/postRequests.js";
+import { startMachine, endMachine } from "../utils/postRequests.js";
 
 /* Layout Components */
 import Header from "../components/Header.jsx";
@@ -55,7 +55,25 @@ export default function Home() {
   }
 
   useEffect(() => {
-    startMachine();
+    let active = true;
+
+    const start = async () => {
+      try {
+        await startMachine();
+      } catch (error) {
+        console.error("Failed to start live session:", error);
+      }
+    };
+
+    start();
+
+    return () => {
+      if (!active) return;
+      active = false;
+      endMachine().catch((error) => {
+        console.error("Failed to end live session on exit:", error);
+      });
+    };
   }, []);
 
   useEffect(() => {

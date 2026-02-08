@@ -60,31 +60,23 @@ export async function linkDeviceOwner(userId, deviceId = "handwashpi") {
 }
 
 export async function startMachine(){
-    try {
-        const response = await fetch(`${API_BASE}/start`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ "deviceId": "handwashpi" })
-        })
-        return parseApiResponse(response);
-    } catch(err){
-        console.log(err);
-    }
+    const response = await fetch(`${API_BASE}/start`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ "deviceId": "handwashpi" })
+    });
+    return parseApiResponse(response);
 }
 
 export async function endMachine(){
-    try {
-        const response = await fetch(`${API_BASE}/end`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ "deviceId": "handwashpi" })
-        })
-        return parseApiResponse(response);
-    } catch(err){
-        console.log(err);
-    }
+    const response = await fetch(`${API_BASE}/end`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ "deviceId": "handwashpi" })
+    });
+    return parseApiResponse(response);
 }

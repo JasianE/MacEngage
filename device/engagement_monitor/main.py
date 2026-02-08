@@ -143,8 +143,8 @@ def main(device_id: str) -> None:
     # Session manager — enforces single-session-at-a-time
     session_mgr = SessionManager()
 
-    # Disabled by default to preserve prior local-keyboard behavior unless explicitly enabled.
-    enable_remote_commands = os.environ.get("ENABLE_REMOTE_COMMANDS", "0") == "1"
+    # Remote command polling is enabled by default for frontend-triggered start/end.
+    enable_remote_commands = os.environ.get("ENABLE_REMOTE_COMMANDS", "1") == "1"
     enable_stdin_commands = os.environ.get("ENABLE_STDIN_COMMANDS", "1") == "1"
 
     print("=" * 60)

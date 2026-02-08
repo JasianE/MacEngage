@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 from datetime import datetime, timezone
 
 import firebase_admin
@@ -20,6 +21,15 @@ def _ensure_initialized():
         return
 
     cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if not cred_path:
+        # Convenience default for local device runs:
+        # use device/config/service-account-key.json if present.
+        default_key = Path(__file__).resolve().parents[1] / "config" / "service-account-key.json"
+        if default_key.exists():
+            cred_path = str(default_key)
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = cred_path
+            logger.info("Using default Firebase key at %s", cred_path)
+
     if cred_path:
         cred = credentials.Certificate(cred_path)
     else:

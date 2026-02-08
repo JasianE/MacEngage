@@ -1,5 +1,6 @@
 """TFLite model loading and behavior detection inference."""
 
+import json
 import logging
 import re
 from pathlib import Path
@@ -12,6 +13,9 @@ logger = logging.getLogger(__name__)
 _MODEL_DIR = Path(__file__).resolve().parent.parent / "model"
 _DEFAULT_MODEL_PATH = _MODEL_DIR / "model_unquant.tflite"
 _DEFAULT_LABELS_PATH = _MODEL_DIR / "labels.txt"
+_TRAINING_CAPTURE_CONFIG_PATH = (
+    Path(__file__).resolve().parent.parent / "config" / "training_capture.json"
+)
 
 _LABEL_ALIASES = {
     "hands_on_head": "hands_on_head",
@@ -54,6 +58,46 @@ def _load_labels(labels_path: Path) -> list[str]:
     return labels
 
 
+def _load_preprocessing_from_training_capture_config(
+    config_path: Path = _TRAINING_CAPTURE_CONFIG_PATH,
+) -> tuple[bool, bool]:
+    """Load frame preprocessing options that were used during data capture.
+
+    Returns:
+        (flip180, swap_red_blue)
+    """
+    flip180 = False
+    swap_red_blue = False
+
+    if not config_path.exists():
+        return flip180, swap_red_blue
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        flip180 = bool(cfg.get("flip180", False))
+        swap_red_blue = bool(cfg.get("swapRedBlue", False))
+    except (json.JSONDecodeError, OSError):
+        logger.warning("Could not read training capture config at %s", config_path)
+
+    return flip180, swap_red_blue
+
+
+def _apply_frame_preprocessing(
+    frame: np.ndarray,
+    *,
+    flip180: bool,
+    swap_red_blue: bool,
+) -> np.ndarray:
+    """Apply capture-time transforms to match model training inputs."""
+    out = frame
+    if swap_red_blue:
+        out = out[:, :, ::-1]
+    if flip180:
+        out = np.rot90(out, 2)
+    return np.ascontiguousarray(out)
+
+
 class Detector:
     """TFLite-based behavior detector.
 
@@ -75,6 +119,8 @@ class Detector:
         self._input_height = 224
         self._input_width = 224
         self._input_dtype = np.float32
+        self._flip180 = False
+        self._swap_red_blue = False
 
     def load(self) -> None:
         """Load the TFLite model and labels."""
@@ -97,11 +143,19 @@ class Detector:
         self._input_height = int(input_shape[1])
         self._input_width = int(input_shape[2])
         self._input_dtype = self._input_details[0]["dtype"]
+        self._flip180, self._swap_red_blue = (
+            _load_preprocessing_from_training_capture_config()
+        )
         logger.info(
             "Model loaded from %s — input shape: %s dtype=%s",
             self._model_path,
             input_shape,
             self._input_dtype,
+        )
+        logger.info(
+            "Inference preprocessing: flip180=%s swapRedBlue=%s",
+            self._flip180,
+            self._swap_red_blue,
         )
         logger.info("Label mapping: %s", self._labels)
 
@@ -122,6 +176,13 @@ class Detector:
         """
         if self._interpreter is None:
             raise RuntimeError("Model not loaded. Call load() first.")
+
+        # Apply same transforms used during training photo capture.
+        frame = _apply_frame_preprocessing(
+            frame,
+            flip180=self._flip180,
+            swap_red_blue=self._swap_red_blue,
+        )
 
         # Resize according to model input shape
         img = Image.fromarray(frame)

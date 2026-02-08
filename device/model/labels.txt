@@ -1,8 +1,7 @@
-0 hands on head
-1 head down
-2 Looking at the board
-3 Looking away
-4 On phone
-5 Raising Hand
-6 Talking to each other
-7 Writing notes
+0 head_down
+1 looking_at_board
+2 looking_away_long
+3 on_phone
+4 raising_hand
+5 talking_to_group
+6 writing_notes

@@ -83,12 +83,18 @@ The Pi app processes these and updates command status (`processed`/`rejected`).
 
 ### Important runtime flag on Raspberry Pi
 
-Remote command handling is disabled by default for safety.
+Remote command handling is enabled by default in current device code.
 
-Enable it when running the device app:
+Run normally:
 
 ```bash
-ENABLE_REMOTE_COMMANDS=1 python -m engagement_monitor
+python -m engagement_monitor
+```
+
+Optional override to disable remote commands:
+
+```bash
+ENABLE_REMOTE_COMMANDS=0 python -m engagement_monitor
 ```
 
 ### What is still missing (if you require exact REST URLs)

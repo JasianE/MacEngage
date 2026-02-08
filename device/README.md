@@ -27,8 +27,10 @@ sudo apt update && sudo apt install -y python3-picamera2
 
 pip install -r requirements.txt
 
-# Set Firebase credentials
-export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
+# Firebase credentials
+# Optional if your key exists at device/config/service-account-key.json (auto-detected).
+# Otherwise set explicitly:
+# export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
 
 # (Already done) model files should exist at:
 # model/model_unquant.tflite
@@ -38,6 +40,22 @@ export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
 export LOG_LEVEL=INFO
 python -m engagement_monitor
 ```
+
+### Do I need Firebase CLI commands every time?
+
+No. You do **not** need to run `firebase login`, `firebase deploy`, or other Firebase CLI
+commands to start the device monitor.
+
+At runtime, the monitor only needs Firebase Admin credentials. It now auto-loads
+`config/service-account-key.json` when present, so your normal flow is simply:
+
+```bash
+cd device
+source .venv/bin/activate
+python -m engagement_monitor
+```
+
+If you prefer, `py -m engagement_monitor` also works in environments where `py` is available.
 
 If `python3-picamera2` is installed but import still fails, your venv was likely
 created without `--system-site-packages`. Fix with either:

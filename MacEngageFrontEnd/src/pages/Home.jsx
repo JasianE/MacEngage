@@ -1,6 +1,7 @@
 /* Utils + Libs */
 import { useState, useEffect, useRef } from "react";
 import { getLiveData } from "../utils/fetchResponseData.js";
+import { startMachine } from "../utils/postRequests.js";
 
 /* Layout Components */
 import Header from "../components/Header.jsx";
@@ -38,14 +39,12 @@ export default function Home() {
   // Track recent smoothed values
   recent.push(currentValue);
   if (recent.length > TREND_WINDOW) recent.shift();
-  console.log(recent)
 
   // Calculate drop over recent trend
   const highestRecent = Math.max(...recent);
   const dropFromRecentHigh = highestRecent - currentValue;
 
   const prevState = engagementStateRef.current;
-  console.log(currentValue)
 
   // CRITICAL condition
   if (currentValue < CRITICAL_THRESHOLD && prevState !== "CRITICAL") {
@@ -68,13 +67,18 @@ export default function Home() {
   // No significant event detected
     return null;
   }
+  useEffect(() => {
+    startMachine();
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
       (async () => {
-        const liveData = await getLiveData();
+        const data = await getLiveData();
+        const process = await data.json();
+        const liveData = process.liveData;
 
-        const rawValue = liveData.engagementValue;
+        const rawValue = liveData.engagementScore;
 
         let smoothedValue;
         if (lastSmoothedRef.current === null) {
@@ -85,7 +89,7 @@ export default function Home() {
             (1 - ALPHA) * lastSmoothedRef.current;
         }
 
-        const event = detectEngagementEvent(smoothedValue, liveData.time);
+        const event = detectEngagementEvent(smoothedValue, liveData.timeSinceStarted);
 
         if (event) {
           setAlerts(prev => [

@@ -1,11 +1,11 @@
 
 
-export async function getLiveData(){
+export async function getLiveData({sessionId}){
     try {
-        const data = await fetch("https://jsonplaceholder.typicode.com/todos/1");
+        const data = await fetch(`https://us-central1-macengage2026.cloudfunctions.net/api/live/${sessionId}`);
         const result = await data.json();
         
-        return {time: 3, engagementValue: Math.random() * 100};
+        return result;
     } catch(err){
         console.log(err);
     }

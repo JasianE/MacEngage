@@ -1,15 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { endMachine } from '../utils/postRequests';
 
 const Header = () => {
   const navigate = useNavigate();
 
   // Handle ending the session
-  const handleEndSession = () => {
+  const handleEndSession =  async () => {
     if (window.confirm("Are you sure you want to end the session?")) {
       // Optional: save session data here
       navigate("/dashboard"); // redirect to dashboard
       //Add logic and session data
+      endMachine();
     }
   };
 

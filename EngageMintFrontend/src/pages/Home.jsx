@@ -1,82 +1,69 @@
 /* Utils + Libs */
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { getLiveData } from "../utils/fetchResponseData.js";
 import { startMachine, endMachine } from "../utils/postRequests.js";
 
 /* Layout Components */
 import Header from "../components/Header.jsx";
-import Footer from "../components/Footer.jsx";
-import GraphLayout from "../layouts/GraphLayout.jsx";
-import AlertLayout from "../layouts/AlertLayout.jsx";
 
 /* Molecules */
-import AlertCard from "../components/AlertCard.jsx";
 import ScoreDisplay from "../components/ScoreDisplay.jsx";
 import StatTracker from "../components/StatTracker.jsx";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [engagementArray, setEngagementArray] = useState([0]);
   const [timeArray, setTimeArray] = useState([0]);
-  const [alerts, setAlerts] = useState([]);
   const [score, setScore] = useState(0);
+  const [selectedRange, setSelectedRange] = useState("30m");
+  const [showStartModal, setShowStartModal] = useState(true);
+  const [sessionName, setSessionName] = useState("");
+  const [startError, setStartError] = useState("");
+  const [isStarting, setIsStarting] = useState(false);
+  const [hasStartedSession, setHasStartedSession] = useState(false);
 
-  const recentValuesRef = useRef([]);
-  const engagementStateRef = useRef("NORMAL"); // NORMAL | DIP | CRITICAL
+  const RANGE_TO_SECONDS = useRef({
+    "5m": 5 * 60,
+    "30m": 30 * 60,
+    "1h": 60 * 60,
+  });
 
-  function detectEngagementEvent(currentValue) {
-    const DIP_THRESHOLD = 60;
-    const CRITICAL_THRESHOLD = 45;
-    const TREND_WINDOW = 5;
-    const DROP_RATE = 10;
-
-    const recent = recentValuesRef.current;
-    recent.push(currentValue);
-    if (recent.length > TREND_WINDOW) recent.shift();
-
-    const highestRecent = Math.max(...recent);
-    const dropFromRecentHigh = highestRecent - currentValue;
-    const prevState = engagementStateRef.current;
-
-    if (currentValue < CRITICAL_THRESHOLD && prevState !== "CRITICAL") {
-      engagementStateRef.current = "CRITICAL";
-      return { type: "THRESHOLD", message: "Critical engagement drop detected." };
+  async function handleStartSession() {
+    const trimmedName = sessionName.trim();
+    if (!trimmedName) {
+      setStartError("Class name is required.");
+      return;
     }
 
-    if (
-      currentValue < DIP_THRESHOLD &&
-      dropFromRecentHigh >= DROP_RATE &&
-      prevState === "NORMAL"
-    ) {
-      engagementStateRef.current = "DIP";
-      return { type: "DIP", message: "Engagement dip detected." };
+    try {
+      setIsStarting(true);
+      setStartError("");
+      await startMachine(trimmedName);
+      setHasStartedSession(true);
+      setShowStartModal(false);
+    } catch (error) {
+      console.error("Failed to start live session:", error);
+      setStartError(error.message || "Failed to start session.");
+    } finally {
+      setIsStarting(false);
     }
-
-    return null;
   }
 
   useEffect(() => {
-    let active = true;
-
-    const start = async () => {
-      try {
-        await startMachine();
-      } catch (error) {
-        console.error("Failed to start live session:", error);
-      }
-    };
-
-    start();
-
     return () => {
-      if (!active) return;
-      active = false;
+      if (!hasStartedSession) return;
       endMachine().catch((error) => {
         console.error("Failed to end live session on exit:", error);
       });
     };
-  }, []);
+  }, [hasStartedSession]);
 
   useEffect(() => {
+    if (!hasStartedSession) {
+      return undefined;
+    }
+
     const interval = setInterval(async () => {
       try {
         const { data } = await getLiveData();
@@ -107,56 +94,156 @@ export default function Home() {
         const roundedValue = Math.round(movingAverage);
         setScore(roundedValue);
 
-        const event = detectEngagementEvent(roundedValue);
-
-        if (event) {
-          setAlerts(prev => [
-            {
-              id: crypto.randomUUID(),
-              type: event.type,
-              timestamp: new Date().toLocaleTimeString(),
-              message: event.message,
-              opacity: 1,
-            },
-            ...prev.map(a => ({
-              ...a,
-              opacity: Math.max(0.4, a.opacity - 0.1),
-            })),
-          ]);
-        }
-
-        setEngagementArray(prev => [...prev.slice(-14), roundedValue]);
-        setTimeArray(prev => [...prev.slice(-14), latestTime]);
+        setEngagementArray(prev => [...prev.slice(-3600), roundedValue]);
+        setTimeArray(prev => [...prev.slice(-3600), latestTime]);
       } catch (err) {
         console.error("Live data error:", err);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [hasStartedSession]);
+
+  const latestTime = timeArray[timeArray.length - 1] || 0;
+  const windowSeconds = RANGE_TO_SECONDS.current[selectedRange];
+  const firstIncludedTime = Math.max(0, latestTime - windowSeconds);
+
+  const pairedPoints = timeArray
+    .map((t, idx) => ({ t, y: engagementArray[idx] ?? 0 }))
+    .filter((point) => point.t >= firstIncludedTime);
+
+  const displayedTimeArray = pairedPoints.map((p) => p.t);
+  const displayedEngagementArray = pairedPoints.map((p) => p.y);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-100 text-slate-900 overflow-hidden relative">
       <Header />
 
-      <main className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-auto lg:overflow-hidden">
-        <GraphLayout title="Engagement Trend">
-          <StatTracker
-            engagementArray={engagementArray}
-            timeArray={timeArray}
-            color="#f1f5f9"
-          />
-        </GraphLayout>
-
-        <AlertLayout title="Alerts" badge="LIVE">
+      <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-full">
+          <section className="xl:col-span-1 space-y-6">
           <ScoreDisplay score={score} />
-          {alerts.map(alert => (
-            <AlertCard alert={alert} key={alert.id} />
-          ))}
-        </AlertLayout>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <p className="text-2xl font-bold text-slate-800">
+                  {hasStartedSession ? "Active" : "Idle"}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Session Status</p>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                <p className="text-2xl font-bold text-slate-800">
+                  {Math.floor((timeArray[timeArray.length - 1] || 0) / 60)}:
+                  {String((timeArray[timeArray.length - 1] || 0) % 60).padStart(2, "0")}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Duration</p>
+              </div>
+            </div>
+
+          </section>
+
+          <section className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm flex flex-col">
+            <div className="flex flex-wrap gap-3 justify-between items-start mb-4">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-900">Engagement Trend</h2>
+                <p className="text-slate-500 text-lg">Real-time tracking over the live session</p>
+              </div>
+
+              <div className="flex gap-2">
+                {Object.keys(RANGE_TO_SECONDS.current).map((range) => {
+                  const isActive = selectedRange === range;
+                  return (
+                    <button
+                      key={range}
+                      type="button"
+                      onClick={() => setSelectedRange(range)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                        isActive
+                          ? "bg-emerald-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {range}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex-1 border border-slate-200 rounded-2xl p-2 md:p-4 bg-gradient-to-b from-white to-slate-50">
+              <StatTracker
+                engagementArray={displayedEngagementArray}
+                timeArray={displayedTimeArray}
+                color="#64748b"
+              />
+            </div>
+          </section>
+        </div>
       </main>
 
-      <Footer />
+      {showStartModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-[520px] rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden relative">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            <div className="pt-10 px-10 pb-2 flex flex-col items-center text-center">
+              <div className="size-16 rounded-full bg-emerald-100 flex items-center justify-center mb-6 text-emerald-500 text-2xl">
+                🍃
+              </div>
+              <h1 className="text-4xl font-black text-[#0d1b12] mb-2">Start New Session</h1>
+              <p className="text-emerald-700 text-sm max-w-xs leading-relaxed">
+                Enter details below to initialize a new class monitoring environment.
+              </p>
+            </div>
+
+            <div className="p-10 flex flex-col gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-[#0d1b12]" htmlFor="class_name">
+                  Class Name
+                </label>
+                <input
+                  id="class_name"
+                  type="text"
+                  value={sessionName}
+                  onChange={(e) => {
+                    setSessionName(e.target.value);
+                    if (startError) setStartError("");
+                  }}
+                  placeholder="e.g., Calculus II"
+                  className="block w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f8fcf9] text-[#0d1b12] placeholder:text-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
+                />
+                {startError ? <p className="text-xs font-medium text-red-500">{startError}</p> : null}
+              </div>
+            </div>
+
+            <div className="px-10 pb-10 flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={handleStartSession}
+                disabled={isStarting}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-6 rounded-lg transition-colors shadow-lg shadow-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isStarting ? "Starting..." : "▶ Start Monitoring"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard")}
+                className="w-full text-center text-sm font-medium text-gray-500 hover:text-[#0d1b12] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -124,7 +124,17 @@ export async function linkDeviceOwner(userId, deviceId = "handwashpi") {
 
 
 
-export async function startMachine(){
+export async function startMachine(sessionName, deviceId = "handwashpi") {
+
+  const normalizedSessionName = typeof sessionName === "string" ? sessionName.trim() : "";
+
+  if (!normalizedSessionName) {
+
+    throw new Error("sessionName is required");
+
+  }
+
+
 
     const response = await fetch(`${API_BASE}/start`, {
 
@@ -136,7 +146,7 @@ export async function startMachine(){
 
         },
 
-        body: JSON.stringify({ "deviceId": "handwashpi" })
+        body: JSON.stringify({ deviceId, sessionName: normalizedSessionName })
 
     });
 

@@ -143,13 +143,19 @@ app.get("/health", (_req, res) => ok(res, { service: "api", status: "up" }));
 app.post("/start", async (req, res) => {
   try {
     const db = getDb();
-    const { deviceId } = req.body || {};
+    const { deviceId, sessionName } = req.body || {};
     if (!deviceId) {
       return fail(res, "deviceId is required", 400);
+    }
+    const normalizedSessionName =
+      typeof sessionName === "string" ? sessionName.trim() : "";
+    if (!normalizedSessionName) {
+      return fail(res, "sessionName is required", 400);
     }
 
     const payload = {
       type: "start_session",
+      sessionName: normalizedSessionName,
       status: "pending",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };

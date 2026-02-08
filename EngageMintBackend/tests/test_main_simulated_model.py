@@ -49,9 +49,19 @@ def test_run_session_with_simulated_model_output(monkeypatch):
     completed_sessions: list[dict] = []
     shown_scores: list[int] = []
 
-    def _fake_create_session(session_id: str, device_id: str, started_at: str):
+    def _fake_create_session(
+        session_id: str,
+        device_id: str,
+        started_at: str,
+        title: str | None = None,
+    ):
         created_sessions.append(
-            {"session_id": session_id, "device_id": device_id, "started_at": started_at}
+            {
+                "session_id": session_id,
+                "device_id": device_id,
+                "started_at": started_at,
+                "title": title,
+            }
         )
 
     def _fake_emit_tick(_session_id: str, payload: dict, _time_since_start: int):
@@ -86,6 +96,7 @@ def test_run_session_with_simulated_model_output(monkeypatch):
     assert len(created_sessions) == 1
     assert created_sessions[0]["session_id"] == session.session_id
     assert created_sessions[0]["device_id"] == "dev-test"
+    assert created_sessions[0]["title"] is None
 
     assert len(emitted_ticks) == 3
     assert [t["engagementScore"] for t in emitted_ticks] == [100, 40, 0]

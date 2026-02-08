@@ -53,7 +53,12 @@ def run_session(
     confidence_threshold = config.get("confidenceThreshold", 0.6)
 
     # Create session document in Firestore
-    emitter.create_session(session_id, device_id, session.started_at.isoformat())
+    emitter.create_session(
+        session_id,
+        device_id,
+        session.started_at.isoformat(),
+        title=session.session_name,
+    )
 
     logger.info("Session %s started on device %s", session_id, device_id)
     print(f"\n[SESSION STARTED] {session_id}")
@@ -162,7 +167,7 @@ def main(device_id: str) -> None:
     shutdown_event = threading.Event()
     cmd_queue: queue.Queue[str] = queue.Queue()
 
-    def _start_session() -> None:
+    def _start_session(session_name: str | None = None) -> None:
         nonlocal session_thread, config
         if session_thread is not None and session_thread.is_alive():
             print("[WARN] Session already active. Press 'e' to end it first.")
@@ -177,7 +182,7 @@ def main(device_id: str) -> None:
 
         # Start session via manager (enforces no overlap)
         try:
-            session_mgr.start_session(device_id)
+            session_mgr.start_session(device_id, session_name=session_name)
         except RuntimeError as exc:
             print(f"[ERROR] {exc}")
             return
@@ -231,7 +236,12 @@ def main(device_id: str) -> None:
                     cmd_id, cmd_doc = pending
                     cmd_type = str(cmd_doc.get("type", "")).strip().lower()
                     if cmd_type in {"start", "start_session"}:
-                        _start_session()
+                        command_session_name = cmd_doc.get("sessionName")
+                        _start_session(
+                            session_name=command_session_name
+                            if isinstance(command_session_name, str)
+                            else None
+                        )
                         emitter.mark_command(device_id, cmd_id, "processed")
                     elif cmd_type in {"end", "stop", "end_session"}:
                         _end_session()

@@ -35,6 +35,17 @@ function formatSessionDate(rawValue) {
   return "Date unavailable";
 }
 
+function getSessionScore(session) {
+  const rawScore =
+    session?.overallScore ??
+    session?.engagementScore ??
+    session?.averageEngagement ??
+    session?.score;
+
+  if (typeof rawScore !== "number" || Number.isNaN(rawScore)) return null;
+  return Math.max(0, Math.min(100, Math.round(rawScore)));
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
@@ -116,26 +127,61 @@ export default function Dashboard() {
               No previous sessions found.
             </p>
           ) : (
-            sessions.map((session) => (
+            sessions.map((session, index) => {
+              const score = getSessionScore(session);
+              const scoreBars = [16, 24, 20, 30, 26];
+              const activeBars = score == null ? 0 : Math.max(1, Math.ceil(score / 20));
+
+              return (
               <div
                 key={session.id}
                 onClick={() => navigate(`/session/${session.id}`)}
-                className="bg-white dark:bg-slate-800 hover:bg-blue-900 border border-slate-200 dark:border-slate-700 rounded shadow p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow p-4 cursor-pointer hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-500 transition-all"
               >
-                <h3 className="font-bold text-slate-900 dark:text-white">
-                  {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {formatSessionDate(
-                    session.startedAt ||
-                      session.createdAt ||
-                      session.date ||
-                      session.seededAt ||
-                      session.endedAt,
-                  )}
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-xl text-slate-900 dark:text-white leading-tight">
+                      {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      {formatSessionDate(
+                        session.startedAt ||
+                          session.createdAt ||
+                          session.date ||
+                          session.seededAt ||
+                          session.endedAt,
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end justify-center shrink-0">
+                    <span className="text-2xl font-extrabold text-emerald-500 dark:text-emerald-400 leading-none">
+                      {score == null ? "--" : `${score}%`}
+                    </span>
+                    <div className="mt-3 flex items-end gap-1">
+                      {scoreBars.map((height, barIndex) => {
+                        const isActive = barIndex < activeBars;
+                        const adjustedHeight = scoreBars[(barIndex + index) % scoreBars.length];
+
+                        return (
+                          <span
+                            key={`${session.id || index}-bar-${barIndex}`}
+                            className={`w-2.5 rounded-full transition-opacity ${
+                              isActive
+                                ? "bg-emerald-500 dark:bg-emerald-400"
+                                : "bg-emerald-200 dark:bg-emerald-900/60"
+                            }`}
+                            style={{ height: `${adjustedHeight}px` }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))
+            );
+            })
           )}
         </div>
         )}

@@ -1,20 +1,26 @@
 const express = require("express");
 const cors = require("cors");
-const functions = require("firebase-functions");
+const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
 const app = express();
+let _db = null;
+
+function getDb() {
+  if (!admin.apps.length) {
+    admin.initializeApp();
+  }
+  if (!_db) {
+    _db = admin.firestore();
+  }
+  return _db;
+}
 
 // NOTE:
 // Firebase Web API keys are not treated as sensitive secrets.
 // For Spark-plan projects (no Secret Manager), you can paste the key below.
 // Optional override at runtime: process.env.FIREBASE_WEB_API_KEY
-const DEFAULT_FIREBASE_WEB_API_KEY = "";
+const DEFAULT_FIREBASE_WEB_API_KEY = "AIzaSyCUW35ay88CavEyxLJO6L8rv63ayZTcNko";
 
 app.use(cors({ origin: true }));
 app.use(express.json());
@@ -33,6 +39,7 @@ function safeError(error) {
 
 async function createUser(req, res) {
   try {
+    const db = getDb();
     const { email, password, displayName } = req.body || {};
     if (!email || !password) {
       return fail(res, "email and password are required", 400);
@@ -68,6 +75,7 @@ app.get("/health", (_req, res) => ok(res, { service: "api", status: "up" }));
 
 app.post("/start", async (req, res) => {
   try {
+    const db = getDb();
     const { deviceId } = req.body || {};
     if (!deviceId) {
       return fail(res, "deviceId is required", 400);
@@ -88,6 +96,7 @@ app.post("/start", async (req, res) => {
 
 app.post("/end", async (req, res) => {
   try {
+    const db = getDb();
     const { deviceId } = req.body || {};
     if (!deviceId) {
       return fail(res, "deviceId is required", 400);
@@ -153,6 +162,7 @@ app.post("/login", async (req, res) => {
 
 app.get("/getAllSessionInfo/:userId", async (req, res) => {
   try {
+    const db = getDb();
     const { userId } = req.params;
     const snap = await db.collection("sessions").where("userId", "==", userId).get();
     const sessions = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -164,6 +174,7 @@ app.get("/getAllSessionInfo/:userId", async (req, res) => {
 
 app.get("/sessionInfo/:sessionId", async (req, res) => {
   try {
+    const db = getDb();
     const { sessionId } = req.params;
     const doc = await db.collection("sessions").doc(sessionId).get();
     if (!doc.exists) {
@@ -177,6 +188,7 @@ app.get("/sessionInfo/:sessionId", async (req, res) => {
 
 app.get("/live", async (req, res) => {
   try {
+    const db = getDb();
     const { sessionId } = req.query;
     const limitValue = Number(req.query.limit || 200);
     const safeLimit = Number.isFinite(limitValue) ? Math.min(Math.max(limitValue, 1), 1000) : 200;
@@ -203,6 +215,7 @@ app.get("/live", async (req, res) => {
 
 app.patch("/sessionInfo/:sessionId", async (req, res) => {
   try {
+    const db = getDb();
     const { sessionId } = req.params;
     const { description, comments } = req.body || {};
 
@@ -236,4 +249,4 @@ app.patch("/sessionInfo/:sessionId", async (req, res) => {
   }
 });
 
-exports.api = functions.https.onRequest(app);
+exports.api = onRequest({ region: "us-central1" }, app);

@@ -1,69 +1,138 @@
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://engagemint.local/schemas/session-summary.v1.schema.json",
-  "title": "SessionSummary",
-  "description": "Aggregate statistics emitted when a session ends.",
-  "type": "object",
-  "required": [
-    "schemaVersion",
-    "deviceId",
-    "sessionId",
-    "startedAt",
-    "endedAt",
-    "durationSeconds",
-    "averageEngagement",
-    "tickCount",
-    "timelineRef"
-  ],
-  "additionalProperties": false,
-  "properties": {
-    "schemaVersion": {
-      "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version of this payload schema.",
-      "examples": ["1.0.0"]
-    },
-    "deviceId": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Unique identifier of the device that ran the session."
-    },
-    "sessionId": {
-      "type": "string",
-      "format": "uuid",
-      "description": "UUID of the session being summarized."
-    },
-    "startedAt": {
-      "type": "string",
-      "format": "date-time",
-      "description": "ISO 8601 UTC timestamp when the session started."
-    },
-    "endedAt": {
-      "type": "string",
-      "format": "date-time",
-      "description": "ISO 8601 UTC timestamp when the session ended."
-    },
-    "durationSeconds": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Total session duration in seconds."
-    },
-    "averageEngagement": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 100,
-      "description": "Arithmetic mean of all tick engagement scores."
-    },
-    "tickCount": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Number of metric ticks emitted during the session."
-    },
-    "timelineRef": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Firestore collection path to the tick data for this session.",
-      "examples": ["sessions/abc-123/ticks"]
-    }
-  }
-}
+{
+
+  "$schema": "http://json-schema.org/draft-07/schema#",
+
+  "$id": "https://macengage.local/schemas/session-summary.v1.schema.json",
+
+  "title": "SessionSummary",
+
+  "description": "Aggregate statistics emitted when a session ends.",
+
+  "type": "object",
+
+  "required": [
+
+    "schemaVersion",
+
+    "deviceId",
+
+    "sessionId",
+
+    "startedAt",
+
+    "endedAt",
+
+    "durationSeconds",
+
+    "averageEngagement",
+
+    "tickCount",
+
+    "timelineRef"
+
+  ],
+
+  "additionalProperties": false,
+
+  "properties": {
+
+    "schemaVersion": {
+
+      "type": "string",
+
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+
+      "description": "Semantic version of this payload schema.",
+
+      "examples": ["1.0.0"]
+
+    },
+
+    "deviceId": {
+
+      "type": "string",
+
+      "minLength": 1,
+
+      "description": "Unique identifier of the device that ran the session."
+
+    },
+
+    "sessionId": {
+
+      "type": "string",
+
+      "format": "uuid",
+
+      "description": "UUID of the session being summarized."
+
+    },
+
+    "startedAt": {
+
+      "type": "string",
+
+      "format": "date-time",
+
+      "description": "ISO 8601 UTC timestamp when the session started."
+
+    },
+
+    "endedAt": {
+
+      "type": "string",
+
+      "format": "date-time",
+
+      "description": "ISO 8601 UTC timestamp when the session ended."
+
+    },
+
+    "durationSeconds": {
+
+      "type": "integer",
+
+      "minimum": 1,
+
+      "description": "Total session duration in seconds."
+
+    },
+
+    "averageEngagement": {
+
+      "type": "number",
+
+      "minimum": 0,
+
+      "maximum": 100,
+
+      "description": "Arithmetic mean of all tick engagement scores."
+
+    },
+
+    "tickCount": {
+
+      "type": "integer",
+
+      "minimum": 1,
+
+      "description": "Number of metric ticks emitted during the session."
+
+    },
+
+    "timelineRef": {
+
+      "type": "string",
+
+      "minLength": 1,
+
+      "description": "Firestore collection path to the tick data for this session.",
+
+      "examples": ["sessions/abc-123/ticks"]
+
+    }
+
+  }
+
+}
+

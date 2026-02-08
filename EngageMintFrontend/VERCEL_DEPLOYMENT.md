@@ -46,7 +46,7 @@ Make sure you have:
 
 ```text
 
-https://us-central1-engagemint2026.cloudfunctions.net/api
+https://us-central1-macengage2026.cloudfunctions.net/api
 
 ```
 
@@ -160,7 +160,7 @@ In Vercel project settings (during setup or after):
 
    - **Name**: `VITE_API_BASE_URL`
 
-   - **Value**: `https://us-central1-engagemint2026.cloudfunctions.net/api`
+   - **Value**: `https://us-central1-macengage2026.cloudfunctions.net/api`
 
 3. Apply to:
 

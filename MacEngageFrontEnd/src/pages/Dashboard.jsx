@@ -5,21 +5,31 @@ import { getAllSessionInfo } from "../utils/fetchResponseData";
 function formatSessionDate(rawValue) {
   if (!rawValue) return "Date unavailable";
 
+  const formatDate = (value) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "Date unavailable";
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(parsed);
+  };
+
   if (typeof rawValue === "string") {
-    const parsed = new Date(rawValue);
-    return Number.isNaN(parsed.getTime()) ? "Date unavailable" : parsed.toLocaleString();
+    return formatDate(rawValue);
   }
 
   if (typeof rawValue === "number") {
     // Accept both epoch milliseconds and epoch seconds.
     const timestampMs = rawValue < 1_000_000_000_000 ? rawValue * 1000 : rawValue;
-    const parsed = new Date(timestampMs);
-    return Number.isNaN(parsed.getTime()) ? "Date unavailable" : parsed.toLocaleString();
+    return formatDate(timestampMs);
   }
 
   const seconds = rawValue.seconds ?? rawValue._seconds;
   if (typeof seconds === "number") {
-    return new Date(seconds * 1000).toLocaleString();
+    return formatDate(seconds * 1000);
   }
 
   return "Date unavailable";

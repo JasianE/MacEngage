@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { getAllSessionInfo, getSessionLiveData } from "../utils/fetchResponseData";
+import { getAiComparisonSummary } from "../utils/postRequests";
 
 const CHART_COLORS = ["#4338ca", "#9333ea", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444"];
 
@@ -70,36 +71,19 @@ function normalizeLiveDataToMinuteBuckets(liveData = []) {
   return { minuteToScore, maxMinute };
 }
 
-function buildInsights(selectedSessions, refreshCount) {
-  const sessionNames = selectedSessions.map((s, i) => getSessionTitle(s, i));
-
-  if (sessionNames.length === 0) {
-    return {
-      summary:
-        "Select at least one session to generate AI-powered engagement insights. This is currently a placeholder wrapper.",
-      recommendations: [
-        "Choose sessions with different teaching formats for stronger comparisons.",
-        "Use Refresh Insights after updating your selected sessions.",
-        "AI-generated intervention recommendations will appear here when enabled.",
-      ],
-    };
-  }
-
-  const headlinePair =
-    sessionNames.length === 1
-      ? sessionNames[0]
-      : `${sessionNames[0]} and ${sessionNames[1]}`;
-
+function defaultInsights() {
   return {
-    summary:
-      refreshCount % 2 === 0
-        ? `Placeholder AI summary for ${headlinePair}. This panel will describe when engagement rises or drops across selected sessions, plus which instructional moments appear most effective.`
-        : `Placeholder AI summary refreshed for ${headlinePair}. This section will surface cross-session patterns, focus dips, and likely engagement drivers once the AI backend is connected.`,
+    summary: "Select sessions to generate AI engagement insights.",
     recommendations: [
-      "Placeholder: suggested timing adjustments will appear here.",
-      "Placeholder: suggested activity format swaps will appear here.",
-      "Placeholder: suggested recapture strategies will appear here.",
+      "Choose sessions with different teaching formats for stronger comparisons.",
+      "Use Refresh Insights after updating your selected sessions.",
+      "AI-generated intervention recommendations will appear here.",
     ],
+    metrics: {
+      peakCorrelationLabel: "N/A",
+      attentionSpanLabel: "N/A",
+      recaptureRateLabel: "N/A",
+    },
   };
 }
 
@@ -113,7 +97,26 @@ export default function Analysis() {
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
   const [error, setError] = useState("");
-  const [refreshCount, setRefreshCount] = useState(0);
+  const [aiInsights, setAiInsights] = useState(defaultInsights());
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const loadComparisonInsights = async (sessionIds, options = {}) => {
+    if (!Array.isArray(sessionIds) || sessionIds.length === 0) {
+      setAiInsights(defaultInsights());
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      const response = await getAiComparisonSummary(sessionIds, options);
+      setAiInsights(response?.data || defaultInsights());
+    } catch (aiError) {
+      console.error("Failed to load comparison AI insights:", aiError);
+      setAiInsights(defaultInsights());
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     const userUUID = localStorage.getItem("userUUID");
@@ -177,6 +180,11 @@ export default function Analysis() {
     fetchSelectedLiveData();
   }, [selectedSessionIds]);
 
+  useEffect(() => {
+    if (loading) return;
+    loadComparisonInsights(selectedSessionIds);
+  }, [selectedSessionIds, loading]);
+
   const selectedSessions = useMemo(
     () => selectedSessionIds.map((id) => sessions.find((session) => session.id === id)).filter(Boolean),
     [selectedSessionIds, sessions],
@@ -225,11 +233,6 @@ export default function Analysis() {
         };
       }),
     [selectedSessions, liveDataBySession],
-  );
-
-  const insights = useMemo(
-    () => buildInsights(selectedSessions, refreshCount),
-    [selectedSessions, refreshCount],
   );
 
   const addableSessions = sessions.filter(
@@ -285,10 +288,11 @@ export default function Analysis() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setRefreshCount((value) => value + 1)}
+              onClick={() => loadComparisonInsights(selectedSessionIds, { forceRefresh: true })}
+              disabled={aiLoading}
               className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-600"
             >
-              Refresh Insights
+              {aiLoading ? "Refreshing..." : "Refresh Insights"}
             </button>
           </div>
         </header>
@@ -409,30 +413,32 @@ export default function Analysis() {
                 <div className="mb-4">
                   <h3 className="text-3xl font-black text-gray-900">AI Engagement Summary</h3>
                   <p className="text-xs font-semibold text-gray-500">
-                    Placeholder wrapper generated from current comparison data
+                    Generated from current comparison data
                   </p>
                 </div>
 
-                <p className="mb-4 text-lg leading-relaxed text-gray-700">{insights.summary}</p>
+                <p className="mb-4 text-lg leading-relaxed text-gray-700">
+                  {aiLoading ? "Generating comparison insights..." : aiInsights.summary}
+                </p>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">
                       Peak Correlation
                     </p>
-                    <p className="text-sm font-bold text-gray-900">Placeholder Metric</p>
+                    <p className="text-sm font-bold text-gray-900">{aiInsights?.metrics?.peakCorrelationLabel || "N/A"}</p>
                   </div>
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">
                       Attention Span
                     </p>
-                    <p className="text-sm font-bold text-gray-900">Placeholder Metric</p>
+                    <p className="text-sm font-bold text-gray-900">{aiInsights?.metrics?.attentionSpanLabel || "N/A"}</p>
                   </div>
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-gray-400">
                       Recapture Rate
                     </p>
-                    <p className="text-sm font-bold text-gray-900">Placeholder Metric</p>
+                    <p className="text-sm font-bold text-gray-900">{aiInsights?.metrics?.recaptureRateLabel || "N/A"}</p>
                   </div>
                 </div>
               </article>
@@ -440,7 +446,7 @@ export default function Analysis() {
               <article className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6">
                 <h3 className="mb-5 text-3xl font-black text-emerald-700">Suggested Improvements</h3>
                 <ul className="space-y-3 text-sm text-gray-700">
-                  {insights.recommendations.map((item) => (
+                  {aiInsights.recommendations.map((item) => (
                     <li key={item} className="rounded-lg bg-white/70 p-3">
                       {item}
                     </li>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import StatTracker from "../components/StatTracker";
 import { getSessionInfo, getSessionLiveData } from "../utils/fetchResponseData";
-import { writeComment } from "../utils/postRequests";
+import { getAiSessionSummary, writeComment } from "../utils/postRequests";
 
 function SessionPage() {
   const { sessionId } = useParams();
@@ -12,6 +12,21 @@ function SessionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  async function loadAiSummary(targetSessionId, options = {}) {
+    try {
+      setAiLoading(true);
+      const response = await getAiSessionSummary(targetSessionId, options);
+      setAiSummary(response?.data || null);
+    } catch (aiError) {
+      console.error("Failed to load AI session summary:", aiError);
+      setAiSummary(null);
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +55,8 @@ function SessionPage() {
           comments: Array.isArray(sessionInfo.comments) ? sessionInfo.comments : [],
           liveData,
         });
+
+        await loadAiSummary(sessionInfo.id || sessionId);
       } catch (error) {
         console.error("Fetch error:", error);
         setError(error.message || "Failed to load session.");
@@ -199,20 +216,43 @@ function SessionPage() {
             </article>
 
             <article className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-6">
-              <h2 className="mb-4 text-3xl font-black text-gray-900">AI Summary</h2>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <h2 className="text-3xl font-black text-gray-900">AI Summary</h2>
+                <button
+                  type="button"
+                  onClick={() => loadAiSummary(session.id || sessionId, { forceRefresh: true })}
+                  disabled={aiLoading}
+                  className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {aiLoading ? "Refreshing..." : "Refresh"}
+                </button>
+              </div>
 
               <div className="space-y-5">
                 <section>
                   <h3 className="mb-2 text-xs font-black uppercase tracking-wider text-emerald-700">Key Insights</h3>
                   <p className="rounded-2xl border border-emerald-100 bg-white/70 p-4 text-sm text-gray-700">
-                    AI-generated session insights are coming soon. This panel will summarize engagement trends and teaching moments.
+                    {aiLoading
+                      ? "Generating AI insights..."
+                      : aiSummary?.keyInsights ||
+                        "AI insights are currently unavailable. Try refresh after adding more live session data."}
                   </p>
                 </section>
 
                 <section>
                   <h3 className="mb-2 text-xs font-black uppercase tracking-wider text-emerald-700">Recommendations</h3>
                   <div className="rounded-2xl border border-emerald-100 bg-white/70 p-4 text-sm text-gray-700">
-                    Placeholder: recommended actions will appear here once AI summary generation is enabled.
+                    {aiLoading ? (
+                      <p>Loading recommendations...</p>
+                    ) : Array.isArray(aiSummary?.recommendations) && aiSummary.recommendations.length > 0 ? (
+                      <ul className="list-disc space-y-2 pl-4">
+                        {aiSummary.recommendations.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No recommendations available yet.</p>
+                    )}
                   </div>
                 </section>
               </div>

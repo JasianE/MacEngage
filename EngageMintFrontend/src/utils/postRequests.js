@@ -175,3 +175,55 @@ export async function endMachine(){
     return parseApiResponse(response);
 
 }
+
+export async function getAiSessionSummary(sessionId, options = {}) {
+
+  if (!sessionId) {
+
+    throw new Error("sessionId is required");
+
+  }
+
+  const response = await fetch(`${API_BASE}/ai/session-summary/${encodeURIComponent(sessionId)}`, {
+
+    method: "POST",
+
+    headers: {
+
+      "Content-Type": "application/json",
+
+    },
+
+    body: JSON.stringify(options),
+
+  });
+
+  return parseApiResponse(response);
+
+}
+
+export async function getAiComparisonSummary(sessionIds, options = {}) {
+
+  if (!Array.isArray(sessionIds) || sessionIds.length === 0) {
+
+    throw new Error("sessionIds must be a non-empty array");
+
+  }
+
+  const response = await fetch(`${API_BASE}/ai/comparison-summary`, {
+
+    method: "POST",
+
+    headers: {
+
+      "Content-Type": "application/json",
+
+    },
+
+    body: JSON.stringify({ sessionIds, ...options }),
+
+  });
+
+  return parseApiResponse(response);
+
+}

@@ -10,6 +10,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "backfill:session-owners": "node scripts/backfillSessionOwners.js"
+    "seed:demo": "node scripts/seed-demo-data.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

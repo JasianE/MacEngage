@@ -14,7 +14,7 @@ const app = express();
 // Firebase Web API keys are not treated as sensitive secrets.
 // For Spark-plan projects (no Secret Manager), you can paste the key below.
 // Optional override at runtime: process.env.FIREBASE_WEB_API_KEY
-const DEFAULT_FIREBASE_WEB_API_KEY = "";
+const DEFAULT_FIREBASE_WEB_API_KEY = "AIzaSyCUW35ay88CavEyxLJO6L8rv63ayZTcNko";
 
 app.use(cors({ origin: true }));
 app.use(express.json());

@@ -11,21 +11,38 @@ const mockSessions = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
+  const [userUUID, setUserUUID] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetch("https://jsonplaceholder.typicode.com/todos/1"); // http://192.82.1
-        const process = await data.json();
-        //setSessions(process);
-        setSessions(mockSessions);
-      } catch (error) {
-        console.error("Fetch error:", error);
+      const savedUUID = localStorage.getItem("userUUID");
+
+      if (!savedUUID || savedUUID === "undefined") {
+        navigate('/');
+        return; // prevent fetch from running
       }
+
+      console.log(savedUUID)
+
+      setUserUUID(savedUUID);
+
+      const fetchData = async () => {
+        try {
+          const data = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/");
+          const process = await data.json();
+          setSessions(mockSessions);
+        } catch (error) {
+          console.error("Fetch error:", error);
+        }
+      };
+
+      fetchData();
+    }, []);
+
+    const handleLogout = () => {
+      localStorage.removeItem("userUUID"); // clear cached UUID
+      navigate("/"); // redirect to landing page
     };
 
-    fetchData();
-  }, []); // empty dependency array = runs once on mount
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
@@ -34,12 +51,23 @@ export default function Dashboard() {
         <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
           Dashboard
         </h1>
-        <button
-          onClick={() => navigate("/live-session")}
-          className="bg-primary text-white font-bold px-4 py-2 bg-slate-700 rounded hover:bg-blue-600 transition-colors cursor-pointer"
-        >
-          Start Live Session
-        </button>
+
+        {/* Button Group */}
+        <div className="flex gap-4">
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer"
+          >
+            Logout
+          </button>
+
+          <button
+            onClick={() => navigate("/live-session")}
+            className="bg-primary text-white font-bold py-2 px-4 rounded hover:bg-blue-600 transition-colors cursor-pointer"
+          >
+            Start Live Session
+          </button>
+        </div>
       </header>
 
       {/* Sessions list */}

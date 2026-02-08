@@ -15,18 +15,21 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-        /*
-      const res = await fetch("http://localhost:5000/api/signup", {
+      const res = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/create-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const {data, ok} = await res.json();
+
+      // Store in localStorage
+      console.log(data)
+      localStorage.setItem("userUUID", data.uid);
+
       setLoading(false);
 
       if (!res.ok) throw new Error(data.message || "Signup failed");
-      */
       
       // Redirect to dashboard
       navigate("/dashboard");

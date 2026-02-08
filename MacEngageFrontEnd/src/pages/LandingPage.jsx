@@ -1,8 +1,15 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Landing() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedUUID = localStorage.getItem("userUUID");
+    if(savedUUID){
+      navigate('/dashboard')
+    }
+  }, [])
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-slate-50 dark:bg-slate-900">

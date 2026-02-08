@@ -137,6 +137,19 @@ Email/password login via Firebase Identity Toolkit.
 
 Fetch sessions by `userId` field.
 
+Each returned session is normalized to include:
+
+- `id`
+- `userId`
+- `deviceId`
+- `title`
+- `overallScore`
+- `comments`
+- `startedAt`
+- `endedAt`
+- `createdAt`
+- `updatedAt`
+
 ### Response 200
 
 ```json
@@ -156,6 +169,8 @@ Fetch sessions by `userId` field.
 ## GET /sessionInfo/:sessionId
 
 Fetch one session document.
+
+The response also includes ownership and timing fields (`userId`, `deviceId`, `startedAt`, `endedAt`, etc.) when available.
 
 ### Response 200
 
@@ -195,6 +210,30 @@ Patch `description` and/or `comments`.
   "ok": true,
   "data": {
     "id": "sessionA"
+  }
+}
+```
+
+## PATCH /devices/:deviceId/owner
+
+Set or update the owning user for a device. This is used to ensure newly created sessions are linked to the correct user (`sessions/{sessionId}.userId`).
+
+### Request body
+
+```json
+{
+  "userId": "uid123"
+}
+```
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "deviceId": "handwashpi",
+    "ownerUserId": "uid123"
   }
 }
 ```

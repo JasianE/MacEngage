@@ -1,17 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAllSessionInfo } from "../utils/fetchResponseData";
 
-// Mock data — replace with API call
-const mockSessions = [
-  { id: "abc123", name: "CS101 - Room 402", date: "2026-02-07 10:00 AM" },
-  { id: "abc123", name: "Math 201 - Room 101", date: "2026-02-06 2:00 PM" },
-  { id: "abc123", name: "Physics 105 - Lab 3", date: "2026-02-05 11:00 AM" },
-];
+function formatSessionDate(rawValue) {
+  if (!rawValue) return "Date unavailable";
+
+  if (typeof rawValue === "string") {
+    const parsed = new Date(rawValue);
+    return Number.isNaN(parsed.getTime()) ? "Date unavailable" : parsed.toLocaleString();
+  }
+
+  if (typeof rawValue === "number") {
+    // Accept both epoch milliseconds and epoch seconds.
+    const timestampMs = rawValue < 1_000_000_000_000 ? rawValue * 1000 : rawValue;
+    const parsed = new Date(timestampMs);
+    return Number.isNaN(parsed.getTime()) ? "Date unavailable" : parsed.toLocaleString();
+  }
+
+  const seconds = rawValue.seconds ?? rawValue._seconds;
+  if (typeof seconds === "number") {
+    return new Date(seconds * 1000).toLocaleString();
+  }
+
+  return "Date unavailable";
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
-  const [userUUID, setUserUUID] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
       const savedUUID = localStorage.getItem("userUUID");
@@ -21,22 +39,23 @@ export default function Dashboard() {
         return; // prevent fetch from running
       }
 
-
-      setUserUUID(savedUUID);
-
       const fetchData = async () => {
         try {
-          const data = await fetch(`https://us-central1-macengage2026.cloudfunctions.net/api/getAllSessionInfo/${savedUUID}`);
-          const process = await data.json();
-          const sessions = process.data.sessions;
-          setSessions(sessions);
+          setLoading(true);
+          setError("");
+          const response = await getAllSessionInfo(savedUUID);
+          const sessionList = response?.data?.sessions ?? [];
+          setSessions(sessionList);
         } catch (error) {
           console.error("Fetch error:", error);
+          setError(error.message || "Failed to load previous sessions.");
+        } finally {
+          setLoading(false);
         }
       };
 
       fetchData();
-    }, []);
+    }, [navigate]);
 
     const handleLogout = () => {
       localStorage.removeItem("userUUID"); // clear cached UUID
@@ -76,6 +95,11 @@ export default function Dashboard() {
           Previous Sessions
         </h2>
 
+        {loading ? (
+          <p className="text-slate-500 dark:text-slate-400">Loading previous sessions...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {sessions.length === 0 ? (
             <p className="text-slate-500 dark:text-slate-400">
@@ -89,15 +113,22 @@ export default function Dashboard() {
                 className="bg-white dark:bg-slate-800 hover:bg-blue-900 border border-slate-200 dark:border-slate-700 rounded shadow p-4 cursor-pointer hover:shadow-lg transition-shadow"
               >
                 <h3 className="font-bold text-slate-900 dark:text-white">
-                  {session.name}
+                  {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
                 </h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {session.date}
+                  {formatSessionDate(
+                    session.startedAt ||
+                      session.createdAt ||
+                      session.date ||
+                      session.seededAt ||
+                      session.endedAt,
+                  )}
                 </p>
               </div>
             ))
           )}
         </div>
+        )}
       </main>
     </div>
   );

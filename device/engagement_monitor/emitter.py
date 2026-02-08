@@ -60,10 +60,20 @@ def create_session(session_id: str, device_id: str, started_at: str, title: str 
         title: Optional session title override.
     """
     db = get_db()
+    owner_user_id = None
+    device_doc = db.collection("devices").document(device_id).get()
+    if device_doc.exists:
+        owner_user_id = (device_doc.to_dict() or {}).get("ownerUserId")
+
     db.collection("sessions").document(session_id).set({
         "title": title or f"Session {session_id[:8]} ({device_id}) {started_at[:19]}",
         "overallScore": 0,
         "comments": [],
+        "userId": owner_user_id,
+        "deviceId": device_id,
+        "startedAt": started_at,
+        "createdAt": firestore.SERVER_TIMESTAMP,
+        "updatedAt": firestore.SERVER_TIMESTAMP,
     })
     db.collection("devices").document(device_id).set(
         {
@@ -72,6 +82,12 @@ def create_session(session_id: str, device_id: str, started_at: str, title: str 
         },
         merge=True,
     )
+    if owner_user_id is None:
+        logger.warning(
+            "Session created without ownerUserId mapping: sessions/%s (device=%s)",
+            session_id,
+            device_id,
+        )
     logger.debug("Session created: sessions/%s (device=%s)", session_id, device_id)
 
 
@@ -89,6 +105,8 @@ def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
     db = get_db()
     db.collection("sessions").document(session_id).update({
         "overallScore": float(summary.get("averageEngagement", 0)),
+        "endedAt": ended_at,
+        "updatedAt": firestore.SERVER_TIMESTAMP,
     })
     device_id = summary.get("deviceId")
     if device_id:

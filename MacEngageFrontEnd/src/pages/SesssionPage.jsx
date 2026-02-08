@@ -1,71 +1,98 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { LineChart } from "@mui/x-charts/LineChart";
-import ScoreDisplay from "../components/ScoreDisplay";
 import StatTracker from "../components/StatTracker";
+import { getSessionInfo, getSessionLiveData } from "../utils/fetchResponseData";
 import { writeComment } from "../utils/postRequests";
 
 function SessionPage() {
   const { sessionId } = useParams();
-  const navigate = useNavigate(); // <-- hook for navigation
+  const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
 
-  // Mock fetching session
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await fetch("https://jsonplaceholder.typicode.com/todos/1"); // http://192.82/session/2302-123
-        const process = await data.json();
-        //setSessions(process);
+        setLoading(true);
+        setError("");
+
+        const [sessionInfoResponse, liveDataResponse] = await Promise.all([
+          getSessionInfo(sessionId),
+          getSessionLiveData(sessionId),
+        ]);
+
+        const sessionInfo = sessionInfoResponse?.data ?? {};
+        const liveData = liveDataResponse?.data?.liveData ?? [];
+
+        setSession({
+          id: sessionInfo.id || sessionId,
+          title: sessionInfo.title || `Session ${String(sessionId).slice(0, 8)}`,
+          overallScore:
+            typeof sessionInfo.overallScore === "number"
+              ? Math.round(sessionInfo.overallScore)
+              : 0,
+          comments: Array.isArray(sessionInfo.comments) ? sessionInfo.comments : [],
+          liveData,
+        });
       } catch (error) {
         console.error("Fetch error:", error);
+        setError(error.message || "Failed to load session.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-    const mockSessions = {
-      "abc123": {
-        title: "Math Lesson 3",
-        overallScore: 82,
-        comments: ["Good pacing", "Students engaged"],
-        liveData: [
-          { "time-since-session-started": 10, "engagement-score": 70 },
-          { "time-since-session-started": 20, "engagement-score": 75 },
-          { "time-since-session-started": 30, "engagement-score": 80 },
-        ],
-      },
-      "def456": {
-        title: "Science Lesson 1",
-        overallScore: 90,
-        comments: ["Very interactive"],
-        liveData: [
-          { "time-since-session-started": 5, "engagement-score": 85 },
-          { "time-since-session-started": 15, "engagement-score": 88 },
-        ],
-      },
-    };
-
-    const data = mockSessions[sessionId];
-    setSession(data || null);
   }, [sessionId]);
 
-  if (!session) return <p className="p-8 text-gray-300">Loading session...</p>;
+  if (loading) return <p className="p-8 text-gray-300">Loading session...</p>;
 
-  async function handleAddComment() {
-    if (!newComment.trim()) return;
-    try{
-      //writeComment(newComment);
-    } catch(err){
-      console.log(err);
-    }
-    const updatedComments = [...session.comments, newComment];
-    setSession((prev) => ({ ...prev, comments: updatedComments }));
-    setNewComment("");
+  if (error) {
+    return (
+      <div className="p-8 bg-slate-900 min-h-screen text-white">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="mb-4 bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded transition cursor-pointer"
+        >
+          &larr; Back to Dashboard
+        </button>
+        <p className="text-red-400">{error}</p>
+      </div>
+    );
   }
 
-  const chartX = session.liveData.map((d) => d["time-since-session-started"]);
-  const chartY = session.liveData.map((d) => d["engagement-score"]);
+  if (!session) return <p className="p-8 text-gray-300">Session not found.</p>;
+
+  async function handleAddComment() {
+    const commentText = newComment.trim();
+    if (!commentText || submittingComment) return;
+
+    try {
+      setSubmittingComment(true);
+      const updatedComments = [...(session.comments || []), commentText];
+      const response = await writeComment(session.id || sessionId, updatedComments);
+      const updatedSession = response?.data || {};
+
+      setSession((prev) => ({
+        ...prev,
+        comments: Array.isArray(updatedSession.comments)
+          ? updatedSession.comments
+          : updatedComments,
+      }));
+      setNewComment("");
+    } catch (err) {
+      console.log(err);
+      setError(err.message || "Failed to add comment.");
+    } finally {
+      setSubmittingComment(false);
+    }
+  }
+
+  const chartX = (session.liveData || []).map((d) => d.timeSinceStart ?? d["time-since-session-started"] ?? 0);
+  const chartY = (session.liveData || []).map((d) => d.engagementScore ?? d["engagement-score"] ?? 0);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-8">
@@ -111,9 +138,10 @@ function SessionPage() {
           />
           <button
             onClick={handleAddComment}
+            disabled={submittingComment}
             className="bg-blue-700 hover:bg-blue-800 transition text-white px-4 py-2 rounded"
           >
-            Submit
+            {submittingComment ? "Saving..." : "Submit"}
           </button>
         </div>
       </div>

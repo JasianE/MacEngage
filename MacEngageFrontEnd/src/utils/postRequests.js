@@ -1,32 +1,74 @@
+const API_BASE = "https://us-central1-macengage2026.cloudfunctions.net/api";
 
-export async function writeComment(comment){
-    try{
-        await fetch("http://192", { // non-relational, so just save the document
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                content: comment.content,
-                id: comment.id
-            })
-    })
-    } catch(err){
-        console.log(err);
-    }
+async function parseApiResponse(response) {
+  const payload = await response.json();
+  if (!response.ok || payload?.ok === false) {
+    throw new Error(payload?.message || "Request failed");
+  }
+  return payload;
+}
+
+export async function writeComment(sessionId, comments) {
+  if (!sessionId) {
+    throw new Error("sessionId is required");
+  }
+
+  const response = await fetch(`${API_BASE}/sessionInfo/${encodeURIComponent(sessionId)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ comments }),
+  });
+
+  return parseApiResponse(response);
+}
+
+export async function updateSessionInfo(sessionId, updates) {
+  if (!sessionId) {
+    throw new Error("sessionId is required");
+  }
+
+  const response = await fetch(`${API_BASE}/sessionInfo/${encodeURIComponent(sessionId)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updates),
+  });
+
+  return parseApiResponse(response);
+}
+
+export async function linkDeviceOwner(userId, deviceId = "handwashpi") {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+
+  const response = await fetch(
+    `${API_BASE}/devices/${encodeURIComponent(deviceId)}/owner`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    },
+  );
+
+  return parseApiResponse(response);
 }
 
 export async function startMachine(){
     try {
-        const response = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/start", {
+        const response = await fetch(`${API_BASE}/start`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ "deviceId": "handwashpi" })
         })
-        const data = await response.json();
-        return data;
+        return parseApiResponse(response);
     } catch(err){
         console.log(err);
     }
@@ -34,15 +76,14 @@ export async function startMachine(){
 
 export async function endMachine(){
     try {
-        const response = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/end", {
+        const response = await fetch(`${API_BASE}/end`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ "deviceId": "handwashpi" })
         })
-        const data = await response.json();
-        return data;
+        return parseApiResponse(response);
     } catch(err){
         console.log(err);
     }

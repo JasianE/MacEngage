@@ -1,44 +1,88 @@
 {
+
   "$schema": "http://json-schema.org/draft-07/schema#",
+
   "$id": "https://macengage.local/schemas/metric-tick.v1.schema.json",
+
   "title": "MetricTick",
+
   "description": "A single point-in-time aggregate observation emitted each tick during an active session.",
+
   "type": "object",
+
   "required": [
+
     "schemaVersion",
+
     "deviceId",
+
     "sessionId",
+
     "timestamp",
+
     "engagementScore"
+
   ],
+
   "additionalProperties": false,
+
   "properties": {
+
     "schemaVersion": {
+
       "type": "string",
+
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
+
       "description": "Semantic version of this payload schema.",
+
       "examples": ["1.0.0"]
+
     },
+
     "deviceId": {
+
       "type": "string",
+
       "minLength": 1,
+
       "description": "Unique identifier of the device that produced this tick."
+
     },
+
     "sessionId": {
+
       "type": "string",
+
       "format": "uuid",
+
       "description": "UUID of the session this tick belongs to."
+
     },
+
     "timestamp": {
+
       "type": "string",
+
       "format": "date-time",
+
       "description": "ISO 8601 UTC timestamp of this observation."
+
     },
+
     "engagementScore": {
+
       "type": "integer",
+
       "minimum": 0,
+
       "maximum": 100,
+
       "description": "Weighted aggregate engagement score for this tick, clamped to [0, 100]."
+
     }
+
   }
+
 }
+

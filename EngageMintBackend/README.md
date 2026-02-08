@@ -19,7 +19,7 @@ See the full setup guide: [quickstart.md](../specs/001-engagement-monitor/quicks
 
 ```bash
 # Setup (on Raspberry Pi 5)
-cd device
+cd EngageMintBackend
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
@@ -29,7 +29,7 @@ sudo apt update && sudo apt install -y python3-picamera2
 pip install -r requirements.txt
 
 # Firebase credentials
-# Optional if your key exists at device/config/service-account-key.json (auto-detected).
+# Optional if your key exists at EngageMintBackend/config/service-account-key.json (auto-detected).
 # Otherwise set explicitly:
 # export GOOGLE_APPLICATION_CREDENTIALS="config/service-account-key.json"
 
@@ -51,7 +51,7 @@ At runtime, the monitor only needs Firebase Admin credentials. It now auto-loads
 `config/service-account-key.json` when present, so your normal flow is simply:
 
 ```bash
-cd device
+cd EngageMintBackend
 source .venv/bin/activate
 python -m engagement_monitor
 ```
@@ -165,7 +165,7 @@ Upload each label folder to Google Teachable Machine as separate classes.
 ## Project Structure
 
 ```
-device/
+EngageMintBackend/
 ├── config/weights.json          # Behavior weights & scoring config
 ├── config/training_capture.json # Training photo capture config
 ├── model/                       # TFLite model files (not in git)

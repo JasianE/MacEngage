@@ -27,7 +27,10 @@ Endpoints:
 - `GET /getAllSessionInfo/:userId`
 - `GET /sessionInfo/:sessionId`
 - `GET /live?sessionId=<id>&limit=200`
+- `GET /live/current?deviceId=<id>`
 - `PATCH /sessionInfo/:sessionId` body: `{ "description": "...", "comments": ["..."] }`
+
+Full request/response contracts are documented in [`docs/api-contracts.md`](docs/api-contracts.md).
 
 ## Firebase files added
 

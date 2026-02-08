@@ -65,6 +65,13 @@ def create_session(session_id: str, device_id: str, started_at: str, title: str 
         "overallScore": 0,
         "comments": [],
     })
+    db.collection("devices").document(device_id).set(
+        {
+            "currentSessionId": session_id,
+            "currentSessionUpdatedAt": firestore.SERVER_TIMESTAMP,
+        },
+        merge=True,
+    )
     logger.debug("Session created: sessions/%s (device=%s)", session_id, device_id)
 
 
@@ -83,6 +90,15 @@ def complete_session(session_id: str, ended_at: str, summary: dict) -> None:
     db.collection("sessions").document(session_id).update({
         "overallScore": float(summary.get("averageEngagement", 0)),
     })
+    device_id = summary.get("deviceId")
+    if device_id:
+        db.collection("devices").document(str(device_id)).set(
+            {
+                "currentSessionId": None,
+                "currentSessionUpdatedAt": firestore.SERVER_TIMESTAMP,
+            },
+            merge=True,
+        )
     logger.debug("Session completed: sessions/%s", session_id)
 
 

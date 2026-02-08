@@ -6,7 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import SignUp from "./pages/SignUp";
 import Landing from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
-import SessionPage from "./pages/SesssionPage";
+import SessionPage from "./pages/SessionPage";
 
 function App() {
   //Fetch data and have a component that handles the various alert popups

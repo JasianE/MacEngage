@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { linkDeviceOwner } from "../utils/postRequests";
+import { API_BASE, linkDeviceOwner } from "../utils/postRequests";
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function SignUpPage() {
 
     try {
       const res = await fetch(
-        "https://us-central1-macengage2026.cloudfunctions.net/api/sign-up",
+        `${API_BASE}/sign-up`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

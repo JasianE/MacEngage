@@ -1,4 +1,6 @@
-const API_BASE = "https://us-central1-macengage2026.cloudfunctions.net/api";
+export const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://us-central1-macengage2026.cloudfunctions.net/api";
 
 async function parseApiResponse(response) {
   const payload = await response.json();

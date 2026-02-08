@@ -1,6 +1,7 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { linkDeviceOwner } from "../utils/postRequests";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const res = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/login", {
@@ -20,16 +22,30 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      // Store in localStorage
-      const {data, ok} = await res.json();
-      localStorage.setItem("userUUID", data.uid);
+      const payload = await res.json();
+      if (!res.ok || payload?.ok === false) {
+        throw new Error(payload?.message || "Login failed");
+      }
 
-      if (!res.ok) throw new Error(data.message || "Login failed");
+      const uid = payload?.data?.uid;
+      if (!uid) {
+        throw new Error("Login succeeded but no user id was returned.");
+      }
+
+      localStorage.setItem("userUUID", uid);
+
+      try {
+        await linkDeviceOwner(uid);
+      } catch (ownerError) {
+        console.warn("Failed to link default device owner:", ownerError);
+      }
 
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 

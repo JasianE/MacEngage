@@ -5,8 +5,15 @@ import { getAllSessionInfo } from "../utils/fetchResponseData";
 function formatSessionDate(rawValue) {
   if (!rawValue) return "Date unavailable";
 
-  if (typeof rawValue === "string" || typeof rawValue === "number") {
+  if (typeof rawValue === "string") {
     const parsed = new Date(rawValue);
+    return Number.isNaN(parsed.getTime()) ? "Date unavailable" : parsed.toLocaleString();
+  }
+
+  if (typeof rawValue === "number") {
+    // Accept both epoch milliseconds and epoch seconds.
+    const timestampMs = rawValue < 1_000_000_000_000 ? rawValue * 1000 : rawValue;
+    const parsed = new Date(timestampMs);
     return Number.isNaN(parsed.getTime()) ? "Date unavailable" : parsed.toLocaleString();
   }
 
@@ -109,7 +116,13 @@ export default function Dashboard() {
                   {session.title || session.name || `Session ${session.id?.slice(0, 8) || ""}`}
                 </h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {formatSessionDate(session.startedAt || session.createdAt || session.endedAt)}
+                  {formatSessionDate(
+                    session.startedAt ||
+                      session.createdAt ||
+                      session.date ||
+                      session.seededAt ||
+                      session.endedAt,
+                  )}
                 </p>
               </div>
             ))

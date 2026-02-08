@@ -40,6 +40,25 @@ export async function updateSessionInfo(sessionId, updates) {
   return parseApiResponse(response);
 }
 
+export async function linkDeviceOwner(userId, deviceId = "handwashpi") {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+
+  const response = await fetch(
+    `${API_BASE}/devices/${encodeURIComponent(deviceId)}/owner`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    },
+  );
+
+  return parseApiResponse(response);
+}
+
 export async function startMachine(){
     try {
         const response = await fetch(`${API_BASE}/start`, {

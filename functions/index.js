@@ -37,6 +37,43 @@ function safeError(error) {
   return error?.message || "Unexpected error";
 }
 
+function normalizeTimestamp(value) {
+  if (!value) return null;
+
+  if (typeof value?.toDate === "function") {
+    return value.toDate().toISOString();
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }
+
+  if (typeof value?.seconds === "number") {
+    return new Date(value.seconds * 1000).toISOString();
+  }
+
+  return null;
+}
+
+function mapSessionDoc(doc) {
+  const data = doc.data() || {};
+  return {
+    ...data,
+    id: doc.id,
+    userId: data.userId || null,
+    deviceId: data.deviceId || null,
+    title: data.title || null,
+    overallScore: typeof data.overallScore === "number" ? data.overallScore : 0,
+    comments: Array.isArray(data.comments) ? data.comments : [],
+    description: data.description || null,
+    startedAt: normalizeTimestamp(data.startedAt) || normalizeTimestamp(data.createdAt),
+    endedAt: normalizeTimestamp(data.endedAt),
+    createdAt: normalizeTimestamp(data.createdAt),
+    updatedAt: normalizeTimestamp(data.updatedAt),
+  };
+}
+
 function mapAuthCreateUserError(error) {
   const code = error?.code || "";
   const message = error?.message || "Failed to create user";
@@ -195,8 +232,30 @@ app.get("/getAllSessionInfo/:userId", async (req, res) => {
   try {
     const db = getDb();
     const { userId } = req.params;
-    const snap = await db.collection("sessions").where("userId", "==", userId).get();
-    const sessions = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    if (!userId) {
+      return fail(res, "userId is required", 400);
+    }
+
+    let snap;
+    try {
+      snap = await db
+        .collection("sessions")
+        .where("userId", "==", String(userId))
+        .orderBy("startedAt", "desc")
+        .get();
+    } catch (_e) {
+      try {
+        snap = await db
+          .collection("sessions")
+          .where("userId", "==", String(userId))
+          .orderBy("createdAt", "desc")
+          .get();
+      } catch (_e2) {
+        snap = await db.collection("sessions").where("userId", "==", String(userId)).get();
+      }
+    }
+
+    const sessions = snap.docs.map((doc) => mapSessionDoc(doc));
     return ok(res, { userId, count: sessions.length, sessions });
   } catch (error) {
     return fail(res, "Failed to fetch session list", 500, safeError(error));
@@ -211,9 +270,40 @@ app.get("/sessionInfo/:sessionId", async (req, res) => {
     if (!doc.exists) {
       return fail(res, "Session not found", 404);
     }
-    return ok(res, { id: doc.id, ...doc.data() });
+    return ok(res, mapSessionDoc(doc));
   } catch (error) {
     return fail(res, "Failed to fetch session", 500, safeError(error));
+  }
+});
+
+app.patch("/devices/:deviceId/owner", async (req, res) => {
+  try {
+    const db = getDb();
+    const { deviceId } = req.params;
+    const { userId } = req.body || {};
+
+    if (!deviceId) {
+      return fail(res, "deviceId is required", 400);
+    }
+    if (!userId) {
+      return fail(res, "userId is required", 400);
+    }
+
+    const updates = {
+      ownerUserId: String(userId),
+      ownerUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    await db.collection("devices").doc(String(deviceId)).set(updates, { merge: true });
+    const updatedDoc = await db.collection("devices").doc(String(deviceId)).get();
+
+    return ok(res, {
+      deviceId: String(deviceId),
+      ownerUserId: updatedDoc.data()?.ownerUserId || String(userId),
+    });
+  } catch (error) {
+    return fail(res, "Failed to set device owner", 500, safeError(error));
   }
 });
 
@@ -306,7 +396,7 @@ app.patch("/sessionInfo/:sessionId", async (req, res) => {
 
     await db.collection("sessions").doc(sessionId).set(updates, { merge: true });
     const updated = await db.collection("sessions").doc(sessionId).get();
-    return ok(res, { id: updated.id, ...updated.data() });
+    return ok(res, mapSessionDoc(updated));
   } catch (error) {
     return fail(res, "Failed to update session", 500, safeError(error));
   }

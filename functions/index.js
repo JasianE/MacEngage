@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const functions = require("firebase-functions");
+const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 const app = express();
@@ -249,4 +249,4 @@ app.patch("/sessionInfo/:sessionId", async (req, res) => {
   }
 });
 
-exports.api = functions.https.onRequest(app);
+exports.api = onRequest({ region: "us-central1" }, app);

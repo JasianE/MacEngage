@@ -144,7 +144,7 @@ export default function Home() {
           <StatTracker
             engagementArray={engagementArray}
             timeArray={timeArray}
-            color="black"
+            color="white"
           />
         </GraphLayout>
 

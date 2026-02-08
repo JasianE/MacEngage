@@ -1,2 +1,18 @@
 @import "tailwindcss";
 
+/* Use class-based dark variant (instead of system preference) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Global dark defaults */
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: rgb(15 23 42); /* slate-900 */
+  color: rgb(241 245 249); /* slate-100 */
+}
+
+

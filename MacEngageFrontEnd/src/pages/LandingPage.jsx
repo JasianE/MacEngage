@@ -6,7 +6,8 @@ export default function Landing() {
 
   useEffect(() => {
     const savedUUID = localStorage.getItem("userUUID");
-    if(savedUUID){
+    if(savedUUID != undefined){
+      console.log(savedUUID)
       navigate('/dashboard')
     }
   }, [])

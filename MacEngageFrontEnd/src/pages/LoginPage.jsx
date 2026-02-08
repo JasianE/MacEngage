@@ -12,7 +12,6 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
     try {
       const res = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/login", {
@@ -30,7 +29,6 @@ export default function LoginPage() {
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (err) {
-      setLoading(false);
       setError(err.message);
     }
   };

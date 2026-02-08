@@ -1,52 +1,59 @@
-// src/pages/Signup.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function SignUp() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async (e) => {
+  // ✅ Redirect immediately if user is already logged in
+  useEffect(() => {
+    const uuid = localStorage.getItem("userUUID");
+    if (uuid) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await fetch(
+        "https://us-central1-macengage2026.cloudfunctions.net/api/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
-      const {data, ok} = await res.json();
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Login failed");
 
       // Store in localStorage
-      console.log(data)
       localStorage.setItem("userUUID", data.uid);
 
-      setLoading(false);
-
-      if (!res.ok) throw new Error(data.message || "Signup failed");
-      
       // Redirect to dashboard
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
-      setLoading(false);
       setError(err.message);
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900">
       <form
-        onSubmit={handleSignup}
+        onSubmit={handleLogin}
         className="bg-white dark:bg-slate-800 p-8 rounded shadow-md w-full max-w-sm flex flex-col gap-4"
       >
         <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white">
-          Sign Up
+          Login
         </h2>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -70,9 +77,9 @@ export default function SignUp() {
         />
 
         <button
-        type="submit"
-        disabled={loading}
-        className="
+          type="submit"
+          disabled={loading}
+          className="
             bg-slate-700
             text-white
             font-bold
@@ -86,16 +93,16 @@ export default function SignUp() {
             hover:bg-sky-700
         "
         >
-        {loading ? "Creating account..." : "Sign Up"}
+          {loading ? "Logging in..." : "Login"}
         </button>
 
         <p className="text-sm text-slate-500 dark:text-slate-300 text-center">
-          Already have an account?{" "}
+          Don’t have an account?{" "}
           <span
             className="text-primary cursor-pointer hover:underline"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/signup")}
           >
-            Login
+            Sign Up
           </span>
         </p>
       </form>

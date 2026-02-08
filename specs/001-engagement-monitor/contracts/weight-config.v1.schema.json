@@ -66,11 +66,11 @@
       "default": 0.6
     },
     "tickIntervalSeconds": {
-      "type": "integer",
-      "minimum": 1,
+      "type": "number",
+      "minimum": 0.1,
       "maximum": 60,
-      "description": "Seconds between metric tick emissions. Default: 5",
-      "default": 5
+      "description": "Seconds between metric tick emissions. Default: 0.5",
+      "default": 0.5
     }
   }
 }

@@ -1,10 +1,40 @@
 """Camera capture module wrapping picamera2 for frame acquisition."""
 
+import importlib
 import logging
+import sys
+from pathlib import Path
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def _import_picamera2():
+    """Import Picamera2, with a fallback for apt-installed system packages.
+
+    On Raspberry Pi OS, `python3-picamera2` is installed into
+    `/usr/lib/python3/dist-packages`, which may be hidden from an existing venv
+    that was not created with `--system-site-packages`.
+    """
+    try:
+        from picamera2 import Picamera2  # type: ignore
+
+        return Picamera2
+    except ModuleNotFoundError:
+        pass
+
+    fallback_paths = [
+        Path("/usr/lib/python3/dist-packages"),
+        Path(f"/usr/lib/python{sys.version_info.major}/dist-packages"),
+    ]
+    for p in fallback_paths:
+        p_str = str(p)
+        if p.exists() and p_str not in sys.path:
+            sys.path.append(p_str)
+
+    module = importlib.import_module("picamera2")
+    return module.Picamera2
 
 
 class Camera:
@@ -21,7 +51,15 @@ class Camera:
     def start(self) -> None:
         """Initialize and start the camera."""
         # Import here to allow running on non-Pi systems (tests, dev)
-        from picamera2 import Picamera2
+        try:
+            Picamera2 = _import_picamera2()
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "picamera2 is not importable in this Python environment. "
+                "Install system package: sudo apt update && sudo apt install -y python3-picamera2. "
+                "If already installed, recreate venv with --system-site-packages "
+                "or set PYTHONPATH=/usr/lib/python3/dist-packages."
+            ) from exc
 
         self._picam2 = Picamera2()
         config = self._picam2.create_preview_configuration(

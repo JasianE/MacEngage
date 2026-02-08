@@ -308,3 +308,94 @@ Fetch live data for the device's current active session.
   }
 }
 ```
+
+## POST /ai/session-summary/:sessionId
+
+Generate a session-level AI summary from session metadata + live engagement timeline.
+
+### Request body
+
+```json
+{
+  "forceRefresh": false
+}
+```
+
+`forceRefresh` is optional; when `true`, bypasses cached insight and regenerates.
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "keyInsights": "Engagement averaged 78% ...",
+    "recommendations": [
+      "Insert a short pair activity before minute 22.",
+      "Re-use the coding challenge format near minute 35."
+    ],
+    "source": "gemini",
+    "generatedAt": "2026-02-08T15:25:00.000Z",
+    "cache": {
+      "hit": false,
+      "key": "<hash>"
+    }
+  }
+}
+```
+
+### Response 404
+
+`{ "ok": false, "message": "Session not found" }`
+
+## POST /ai/comparison-summary
+
+Generate a multi-session AI comparison summary.
+
+### Request body
+
+```json
+{
+  "sessionIds": ["sessionA", "sessionB"],
+  "forceRefresh": false
+}
+```
+
+### Response 200
+
+```json
+{
+  "ok": true,
+  "data": {
+    "summary": "Session A maintained a stronger baseline ...",
+    "recommendations": [
+      "Move independent work after the first high-engagement block.",
+      "Add a recap interaction before each identified dip window.",
+      "Track intervention outcomes for one week to validate effect."
+    ],
+    "metrics": {
+      "peakCorrelationLabel": "Session A @ 24m",
+      "attentionSpanLabel": "~22 Minutes",
+      "recaptureRateLabel": "74% after intervention"
+    },
+    "source": "gemini",
+    "generatedAt": "2026-02-08T15:26:00.000Z",
+    "cache": {
+      "hit": false,
+      "key": "<hash>"
+    }
+  }
+}
+```
+
+## Gemini key configuration (server-side only)
+
+- Do **not** put Gemini keys in frontend env files.
+- The `api` function expects a Firebase Functions secret named `GEMINI_API_KEY`.
+- `exports.api` is configured with `secrets: ["GEMINI_API_KEY"]`.
+
+Set via CLI:
+
+```bash
+firebase functions:secrets:set GEMINI_API_KEY
+```

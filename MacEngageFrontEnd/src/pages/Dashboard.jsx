@@ -21,15 +21,15 @@ export default function Dashboard() {
         return; // prevent fetch from running
       }
 
-      console.log(savedUUID)
 
       setUserUUID(savedUUID);
 
       const fetchData = async () => {
         try {
-          const data = await fetch("https://us-central1-macengage2026.cloudfunctions.net/api/");
+          const data = await fetch(`https://us-central1-macengage2026.cloudfunctions.net/api/getAllSessionInfo/${savedUUID}`);
           const process = await data.json();
-          setSessions(mockSessions);
+          const sessions = process.data.sessions;
+          setSessions(sessions);
         } catch (error) {
           console.error("Fetch error:", error);
         }

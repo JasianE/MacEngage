@@ -19,6 +19,7 @@ export default function Home() {
   const [engagementArray, setEngagementArray] = useState([0])
   const [timeArray, setTimeArray] = useState([0])
   const [alerts, setAlerts] = useState([]);
+  const [score, setScore] = useState(0);
 
   const ALPHA = 0.2;
   const lastSmoothedRef = useRef(null);
@@ -72,24 +73,31 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      (async () => {
-        const data = await getLiveData();
-        const process = await data.json();
-        const liveData = process.liveData;
+  const interval = setInterval(() => {
+    (async () => {
+      try {
+        const {data} = await getLiveData(); // now returns array of objects
+        const liveDataArray = data.liveData;
 
-        const rawValue = liveData.engagementScore;
+        // Combine or average all scores for this tick
+        const total = liveDataArray.reduce((sum, item) => sum + item.engagementScore, 0);
+        const avgScore = total / liveDataArray.length;
+        setScore(avgScore);
 
+        // Use the most recent time or pick any representative time
+        const latestTime = liveDataArray[liveDataArray.length - 1]?.timeSinceStart ?? 0;
+
+        // Apply smoothing
         let smoothedValue;
         if (lastSmoothedRef.current === null) {
-          smoothedValue = rawValue;
+          smoothedValue = avgScore;
         } else {
-          smoothedValue =
-            ALPHA * rawValue +
-            (1 - ALPHA) * lastSmoothedRef.current;
+          smoothedValue = ALPHA * avgScore + (1 - ALPHA) * lastSmoothedRef.current;
         }
+        lastSmoothedRef.current = smoothedValue;
 
-        const event = detectEngagementEvent(smoothedValue, liveData.timeSinceStarted);
+        // Detect engagement events
+        const event = detectEngagementEvent(smoothedValue, latestTime);
 
         if (event) {
           setAlerts(prev => [
@@ -100,17 +108,20 @@ export default function Home() {
               message: event.message,
               opacity: 1,
             },
-            ...prev.map(a => ({
-              ...a,
-              opacity: Math.max(0.4, a.opacity - 0.1),
-            })),
-          ]);
+              ...prev.map(a => ({
+                ...a,
+                opacity: Math.max(0.4, a.opacity - 0.1),
+              })),
+            ]);
+          }
+
+          // Add to chart arrays, max 15 points
+          setEngagementArray(prev => [...prev.slice(-14), smoothedValue]);
+          setTimeArray(prev => [...prev.slice(-14), latestTime]);
+
+        } catch (err) {
+          console.error("Error fetching live data:", err);
         }
-
-        lastSmoothedRef.current = smoothedValue;
-
-        setEngagementArray(prev => [...prev, smoothedValue]);
-        setTimeArray(prev => [...prev, prev.length + liveData.time]);
       })();
     }, 1000);
 
@@ -128,7 +139,7 @@ export default function Home() {
         </GraphLayout>
 
         <AlertLayout title="Alerts" badge="LIVE">
-          <ScoreDisplay score={3}/>
+          <ScoreDisplay score={Math.round(score)}/>
           {alerts.map((item) => {
             return <AlertCard alert={item}  key = {item.id}/>
           })}

@@ -402,4 +402,114 @@ app.patch("/sessionInfo/:sessionId", async (req, res) => {
   }
 });
 
+// ─── Gemini AI Summary ───────────────────────────────────────────────
+const GEMINI_API_KEY = "AIzaSyANbvBQtAzcyd2-dVXFieow5zHCsM4FMIY";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+app.post("/ai-summary/:sessionId", async (req, res) => {
+  try {
+    const db = getDb();
+    const { sessionId } = req.params;
+
+    if (!sessionId) {
+      return fail(res, "sessionId is required", 400);
+    }
+
+    // 1. Fetch the session's live engagement data from Firestore
+    let snap;
+    try {
+      snap = await db
+        .collection("sessions")
+        .doc(String(sessionId))
+        .collection("liveData")
+        .orderBy("timeSinceStart", "asc")
+        .get();
+    } catch (_e) {
+      snap = await db
+        .collection("sessions")
+        .doc(String(sessionId))
+        .collection("liveData")
+        .get();
+    }
+
+    const engagementHistory = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    if (engagementHistory.length === 0) {
+      return fail(res, "No engagement data found for this session", 404);
+    }
+
+    // 2. Build the Gemini prompt
+    const prompt = `You are an expert educational psychologist analyzing classroom engagement data.
+      
+      Here is the raw data log from today's class:
+      ${JSON.stringify(engagementHistory)}
+      
+      Please generate a JSON response matching this exact structure for our dashboard:
+      {
+        "summary": "One sentence summary of the overall vibe.",
+        "key_insight": "Identify the lowest point and why it likely happened based on the 'action' label.",
+        "recommendation": "A specific, actionable tip for the teacher to fix the low engagement."
+      }`;
+
+    // 3. Call Gemini API
+    const geminiResponse = await fetch(GEMINI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 512,
+        },
+      }),
+    });
+
+    if (!geminiResponse.ok) {
+      const errorBody = await geminiResponse.text();
+      console.error("[ai-summary] Gemini API error", { status: geminiResponse.status, body: errorBody });
+      return fail(res, "Gemini API request failed", 502, errorBody);
+    }
+
+    const geminiData = await geminiResponse.json();
+    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    // 4. Parse the JSON from Gemini (strip markdown fences if present)
+    const cleaned = rawText
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/g, "")
+      .trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (_parseErr) {
+      parsed = {
+        summary: cleaned || "Unable to parse AI response.",
+        key_insight: "",
+        recommendation: "",
+      };
+    }
+
+    // 5. Persist the summary on the session document for caching
+    await db.collection("sessions").doc(String(sessionId)).set(
+      {
+        aiSummary: {
+          ...parsed,
+          generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return ok(res, {
+      sessionId,
+      aiSummary: parsed,
+    });
+  } catch (error) {
+    console.error("[ai-summary] Unexpected error", safeError(error));
+    return fail(res, "Failed to generate AI summary", 500, safeError(error));
+  }
+});
+
 exports.api = onRequest({ region: "us-central1" }, app);

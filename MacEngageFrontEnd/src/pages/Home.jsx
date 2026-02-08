@@ -20,7 +20,6 @@ export default function Home() {
   const [alerts, setAlerts] = useState([]);
   const [score, setScore] = useState(0);
 
-  const movingWindowRef = useRef([]); // last 5 seconds
   const recentValuesRef = useRef([]);
   const engagementStateRef = useRef("NORMAL"); // NORMAL | DIP | CRITICAL
 
@@ -65,26 +64,30 @@ export default function Home() {
         const { data } = await getLiveData();
         const liveDataArray = data.liveData;
 
-        // Average all devices this second
-        const avgScore =
-          liveDataArray.reduce(
-            (sum, item) => sum + item.engagementScore,
-            0
-          ) / liveDataArray.length;
-
-        // 5-second moving average
-        const window = movingWindowRef.current;
-        window.push(avgScore);
-        if (window.length > 5) window.shift();
-
-        const movingAverage =
-          window.reduce((sum, v) => sum + v, 0) / window.length;
-
-        const roundedValue = Math.round(movingAverage);
-        setScore(roundedValue);
+        if (!liveDataArray?.length) {
+          setScore(0);
+          return;
+        }
 
         const latestTime =
           liveDataArray[liveDataArray.length - 1]?.timeSinceStart ?? 0;
+
+        // True 3-second moving average over the current session timeline.
+        // Keep only ticks whose timeSinceStart falls within [latestTime - 2, latestTime].
+        const threeSecondWindow = liveDataArray.filter(
+          item =>
+            typeof item.timeSinceStart === "number" &&
+            typeof item.engagementScore === "number" &&
+            latestTime - item.timeSinceStart <= 2 &&
+            latestTime - item.timeSinceStart >= 0
+        );
+
+        const movingAverage =
+          threeSecondWindow.reduce((sum, item) => sum + item.engagementScore, 0) /
+          (threeSecondWindow.length || 1);
+
+        const roundedValue = Math.round(movingAverage);
+        setScore(roundedValue);
 
         const event = detectEngagementEvent(roundedValue);
 

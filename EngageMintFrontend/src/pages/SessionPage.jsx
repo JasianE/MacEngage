@@ -123,8 +123,34 @@ function SessionPage() {
     }
   }
 
-  const chartX = (session.liveData || []).map((d) => d.timeSinceStart ?? d["time-since-session-started"] ?? 0);
-  const chartY = (session.liveData || []).map((d) => d.engagementScore ?? d["engagement-score"] ?? 0);
+  const normalizedLiveData = (session.liveData || [])
+    .map((point) => ({
+      timeSinceStart: point?.timeSinceStart ?? point?.["time-since-session-started"],
+      engagementScore: point?.engagementScore ?? point?.["engagement-score"],
+    }))
+    .filter(
+      (point) =>
+        typeof point.timeSinceStart === "number" &&
+        typeof point.engagementScore === "number",
+    );
+
+  const chartX = normalizedLiveData.map((point) => point.timeSinceStart);
+
+  // Match live session graph behavior with a 3-second moving average window.
+  // For each point, average all points in [currentTime - 2, currentTime].
+  const chartY = normalizedLiveData.map((point) => {
+    const windowPoints = normalizedLiveData.filter(
+      (candidate) =>
+        point.timeSinceStart - candidate.timeSinceStart <= 2 &&
+        point.timeSinceStart - candidate.timeSinceStart >= 0,
+    );
+
+    const movingAverage =
+      windowPoints.reduce((sum, item) => sum + item.engagementScore, 0) /
+      (windowPoints.length || 1);
+
+    return Math.round(movingAverage);
+  });
 
   function formatSessionDate(rawValue) {
     if (!rawValue) return "Date unavailable";

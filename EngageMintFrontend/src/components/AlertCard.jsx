@@ -1,10 +1,10 @@
 import React from 'react';
 
 const CONFIGS = {
-  DIP: { bg: 'bg-warning', text: 'text-white', icon: '📉' },
-  RECOVERY: { bg: 'bg-primary', text: 'text-white', icon: '✅' },
-  SYSTEM: { bg: 'bg-slate-900', text: 'text-white', icon: '⚙️' },
-  THRESHOLD: { bg: 'bg-danger', text: 'text-white', icon: '⚠️' }
+  DIP: { badge: 'bg-amber-100 text-amber-700 border-amber-200', icon: '📉' },
+  RECOVERY: { badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: '✅' },
+  SYSTEM: { badge: 'bg-slate-100 text-slate-700 border-slate-200', icon: '⚙️' },
+  THRESHOLD: { badge: 'bg-rose-100 text-rose-700 border-rose-200', icon: '⚠️' }
 };
 
 const AlertCard = ({ alert }) => {
@@ -13,10 +13,10 @@ const AlertCard = ({ alert }) => {
   return (
     <div
       className="
-        bg-slate-900/80
-        border border-slate-700
+        bg-slate-50
+        border border-slate-200
         p-4
-        rounded-lg
+        rounded-xl
         shadow-sm
         transition-transform
         hover:-translate-y-0.5
@@ -28,32 +28,32 @@ const AlertCard = ({ alert }) => {
       <div className="flex justify-between items-start mb-2">
         <span
           className={`
-            ${style.bg} ${style.text}
-            px-2 py-0.5
-            text-[8px]
-            font-black
+            ${style.badge}
+            px-2.5 py-1
+            text-[10px]
+            font-bold
             uppercase
-            tracking-widest
-            rounded
-            border border-slate-900
+            tracking-wide
+            rounded-md
+            border
           `}
         >
           {alert.type}
         </span>
 
-        <span className="text-[9px] font-bold text-slate-400 font-mono tracking-tight">
+        <span className="text-[10px] font-semibold text-slate-400 font-mono tracking-tight">
           {alert.timestamp}
         </span>
       </div>
 
       {/* Message */}
-      <p className="text-sm font-extrabold leading-snug text-slate-100">
+      <p className="text-sm font-semibold leading-snug text-slate-700">
         {alert.message}
       </p>
 
       {/* Meta */}
       {alert.meta && (
-        <div className="mt-2 text-[8px] font-black text-slate-500 uppercase tracking-[0.18em] flex items-center gap-1.5">
+        <div className="mt-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
           <span className="text-xs">{style.icon}</span>
           {alert.meta}
         </div>
